@@ -1,7 +1,16 @@
+"use client";
+
 import { Anchor, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export function Footer() {
+  const [year, setYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="w-full border-t bg-card mt-auto">
       <div className="container mx-auto px-4 py-12 md:py-16">
@@ -58,7 +67,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 border-t pt-8 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Toman Mariners FC. All rights reserved.
+          © {year || '...'} Toman Mariners FC. All rights reserved.
         </div>
       </div>
     </footer>

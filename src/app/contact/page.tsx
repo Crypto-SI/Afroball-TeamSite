@@ -27,20 +27,20 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent className="px-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2" suppressHydrationWarning>
                     <label className="text-sm font-medium">Name</label>
                     <Input placeholder="John Doe" className="bg-background" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2" suppressHydrationWarning>
                     <label className="text-sm font-medium">Email</label>
                     <Input type="email" placeholder="john@example.com" className="bg-background" />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2" suppressHydrationWarning>
                   <label className="text-sm font-medium">Subject</label>
                   <Input placeholder="Ticket Query" className="bg-background" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2" suppressHydrationWarning>
                   <label className="text-sm font-medium">Message</label>
                   <Textarea placeholder="Tell us how we can help..." className="bg-background min-h-[150px]" />
                 </div>
