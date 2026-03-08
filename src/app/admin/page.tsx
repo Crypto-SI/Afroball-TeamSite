@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { 
   Calendar, 
   Plus, 
@@ -20,7 +21,8 @@ import {
   Users,
   ShieldCheck,
   History,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu as MenuIcon
 } from "lucide-react";
 import {
   Table,
@@ -58,6 +60,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 // --- Types ---
@@ -229,16 +232,22 @@ export default function AdminPage() {
     setSName(""); setSRole(""); setSBio("");
   };
 
+  const viewTitle = {
+    fixtures: "Fixtures & Results",
+    players: "First Team Squad",
+    staff: "Leadership & Staff"
+  }[view];
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
       <SidebarProvider>
         <div className="flex flex-1">
-          <Sidebar collapsible="none" className="hidden lg:flex border-r w-64 bg-card">
-            <SidebarHeader className="p-4 border-b">
-              <div className="flex items-center gap-2 px-2">
+          <Sidebar collapsible="icon" className="border-r">
+            <SidebarHeader className="h-16 flex items-center px-4 border-b">
+              <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-5 w-5 text-accent" />
-                <span className="font-black tracking-tight">ADMIN PANEL</span>
+                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden">ADMIN</span>
               </div>
             </SidebarHeader>
             <SidebarContent>
@@ -250,6 +259,7 @@ export default function AdminPage() {
                       <SidebarMenuButton 
                         onClick={() => setView('fixtures')} 
                         isActive={view === 'fixtures'}
+                        tooltip="Fixtures"
                       >
                         <Calendar className="h-4 w-4" />
                         <span>Fixtures & Results</span>
@@ -259,6 +269,7 @@ export default function AdminPage() {
                       <SidebarMenuButton 
                         onClick={() => setView('players')} 
                         isActive={view === 'players'}
+                        tooltip="Players"
                       >
                         <Users className="h-4 w-4" />
                         <span>First Team Squad</span>
@@ -268,6 +279,7 @@ export default function AdminPage() {
                       <SidebarMenuButton 
                         onClick={() => setView('staff')} 
                         isActive={view === 'staff'}
+                        tooltip="Staff"
                       >
                         <ShieldCheck className="h-4 w-4" />
                         <span>Leadership & Staff</span>
@@ -279,14 +291,20 @@ export default function AdminPage() {
             </SidebarContent>
           </Sidebar>
 
-          <SidebarInset className="flex-1 bg-background/50">
-            <main className="p-8">
+          <SidebarInset className="flex-1 bg-background">
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <h1 className="text-xl font-bold uppercase tracking-tight">{viewTitle}</h1>
+            </header>
+            
+            <main className="p-4 md:p-8">
               {/* --- Fixtures View --- */}
               {view === 'fixtures' && (
                 <div className="space-y-8">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h1 className="text-3xl font-black">FIXTURES & RESULTS</h1>
+                      <h2 className="text-3xl font-black">MATCH CENTER</h2>
                       <p className="text-muted-foreground">Manage the Mariner match schedule.</p>
                     </div>
                     <Dialog open={isAddFixtureOpen} onOpenChange={setIsAddFixtureOpen}>
@@ -313,39 +331,60 @@ export default function AdminPage() {
                   </div>
 
                   <Tabs defaultValue="upcoming" className="w-full">
-                    <TabsList><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="completed">Results</TabsTrigger></TabsList>
+                    <TabsList className="mb-4"><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="completed">Results</TabsTrigger></TabsList>
                     <TabsContent value="upcoming">
                       <Card>
                         <CardContent className="pt-6">
-                          <Table>
-                            <TableHeader><TableRow><TableHead>Opponent</TableHead><TableHead>DateTime</TableHead><TableHead>Venue</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                              {fixtures.filter(f => f.status === 'upcoming').map(f => (
-                                <TableRow key={f.id}>
-                                  <TableCell className="font-bold">{f.opponent}</TableCell>
-                                  <TableCell>{f.date} at {f.time}</TableCell>
-                                  <TableCell>{f.venue}</TableCell>
-                                  <TableCell className="text-right">
-                                    <Button size="sm" variant="outline" onClick={() => { setSelectedFixture(f); setMatchGoals([]); setIsResultDialogOpen(true); }}>ENTER RESULT</Button>
-                                    <Button size="icon" variant="ghost" className="text-destructive ml-2" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader><TableRow><TableHead>Opponent</TableHead><TableHead>DateTime</TableHead><TableHead>Venue</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                              <TableBody>
+                                {fixtures.filter(f => f.status === 'upcoming').map(f => (
+                                  <TableRow key={f.id}>
+                                    <TableCell className="font-bold">{f.opponent}</TableCell>
+                                    <TableCell>{f.date} at {f.time}</TableCell>
+                                    <TableCell>{f.venue}</TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => { setSelectedFixture(f); setMatchGoals([]); setIsResultDialogOpen(true); }}>ENTER RESULT</Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                                {fixtures.filter(f => f.status === 'upcoming').length === 0 && (
+                                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">No upcoming fixtures scheduled.</TableCell></TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
                     <TabsContent value="completed">
-                      <div className="space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {fixtures.filter(f => f.status === 'completed').map(f => (
-                          <Card key={f.id} className="p-6">
-                            <div className="flex justify-between items-center">
-                              <h3 className="text-xl font-bold uppercase tracking-tight">MARINERS <span className="text-accent">{f.result?.marinersScore} - {f.result?.opponentScore}</span> {f.opponent}</h3>
-                              <Button variant="ghost" size="icon" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                          <Card key={f.id} className="p-6 border-accent/20">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{f.date}</p>
+                                <h3 className="text-lg font-bold uppercase">MARINERS <span className="text-accent mx-1">{f.result?.marinersScore} - {f.result?.opponentScore}</span> {f.opponent}</h3>
+                              </div>
+                              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                            <div className="space-y-1">
+                              {f.result?.goals.map((g, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Trophy className="h-3 w-3 text-accent" />
+                                  <span>{g.player} ({g.minute}') - {g.team}</span>
+                                </div>
+                              ))}
                             </div>
                           </Card>
                         ))}
+                        {fixtures.filter(f => f.status === 'completed').length === 0 && (
+                          <div className="col-span-full py-12 text-center text-muted-foreground italic">No match results recorded yet.</div>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -355,9 +394,9 @@ export default function AdminPage() {
               {/* --- Players View --- */}
               {view === 'players' && (
                 <div className="space-y-8">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h1 className="text-3xl font-black">FIRST TEAM SQUAD</h1>
+                      <h2 className="text-3xl font-black">ROSTER MANAGEMENT</h2>
                       <p className="text-muted-foreground">Maintain the official player roster.</p>
                     </div>
                     <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen}>
@@ -382,21 +421,23 @@ export default function AdminPage() {
                   </div>
                   <Card>
                     <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Name</TableHead><TableHead>Position</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                          {players.map(p => (
-                            <TableRow key={p.id}>
-                              <TableCell className="font-black text-accent">{p.no}</TableCell>
-                              <TableCell className="font-bold">{p.name}</TableCell>
-                              <TableCell><Badge variant="outline">{p.pos}</Badge></TableCell>
-                              <TableCell className="text-right">
-                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Name</TableHead><TableHead>Position</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {players.map(p => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-black text-accent">{p.no}</TableCell>
+                                <TableCell className="font-bold">{p.name}</TableCell>
+                                <TableCell><Badge variant="outline">{p.pos}</Badge></TableCell>
+                                <TableCell className="text-right">
+                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -405,9 +446,9 @@ export default function AdminPage() {
               {/* --- Staff View --- */}
               {view === 'staff' && (
                 <div className="space-y-8">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h1 className="text-3xl font-black">LEADERSHIP & STAFF</h1>
+                      <h2 className="text-3xl font-black">CLUB OFFICIALS</h2>
                       <p className="text-muted-foreground">Manage coaching and administrative roles.</p>
                     </div>
                     <Dialog open={isAddStaffOpen} onOpenChange={setIsAddStaffOpen}>
@@ -429,20 +470,22 @@ export default function AdminPage() {
                   </div>
                   <Card>
                     <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                          {staff.map(s => (
-                            <TableRow key={s.id}>
-                              <TableCell className="font-bold">{s.name}</TableCell>
-                              <TableCell className="text-accent text-sm font-semibold">{s.role}</TableCell>
-                              <TableCell className="text-right">
-                                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setStaff(staff.filter(x => x.id !== s.id))}><Trash2 className="h-4 w-4" /></Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {staff.map(s => (
+                              <TableRow key={s.id}>
+                                <TableCell className="font-bold">{s.name}</TableCell>
+                                <TableCell className="text-accent text-sm font-semibold">{s.role}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setStaff(staff.filter(x => x.id !== s.id))}><Trash2 className="h-4 w-4" /></Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -457,22 +500,22 @@ export default function AdminPage() {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader><DialogTitle>Enter Match Result</DialogTitle></DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-8 p-4 bg-muted/30 rounded-lg">
-              <div className="text-center"><Label className="text-accent font-bold">MARINERS</Label><Input type="number" value={mScore} onChange={e => setMScore(parseInt(e.target.value))} className="text-center text-2xl font-black" /></div>
-              <div className="text-center"><Label className="font-bold">{selectedFixture?.opponent.toUpperCase()}</Label><Input type="number" value={oScore} onChange={e => setOScore(parseInt(e.target.value))} className="text-center text-2xl font-black" /></div>
+            <div className="grid grid-cols-2 gap-8 p-4 bg-muted/30 rounded-lg text-center">
+              <div><Label className="text-accent font-bold">MARINERS</Label><Input type="number" value={mScore} onChange={e => setMScore(parseInt(e.target.value))} className="text-center text-2xl font-black mt-2" /></div>
+              <div><Label className="font-bold">{selectedFixture?.opponent.toUpperCase() || "OPPONENT"}</Label><Input type="number" value={oScore} onChange={e => setOScore(parseInt(e.target.value))} className="text-center text-2xl font-black mt-2" /></div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between"><h4 className="text-sm font-bold">GOALSCORERS</h4><Button variant="outline" size="sm" onClick={() => setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])}>ADD GOAL</Button></div>
-              <div className="space-y-2">
+              <div className="flex items-center justify-between"><h4 className="text-sm font-bold uppercase tracking-widest">GOALSCORERS</h4><Button variant="outline" size="sm" onClick={() => setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])}>ADD GOAL</Button></div>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                 {matchGoals.map((g, i) => (
                   <div key={i} className="flex gap-2 items-center">
-                    <Input placeholder="Player" value={g.player} onChange={e => { const u = [...matchGoals]; u[i].player = e.target.value; setMatchGoals(u); }} className="h-8" />
+                    <Input placeholder="Player Name" value={g.player} onChange={e => { const u = [...matchGoals]; u[i].player = e.target.value; setMatchGoals(u); }} className="h-8" />
                     <Input type="number" placeholder="Min" value={g.minute} onChange={e => { const u = [...matchGoals]; u[i].minute = parseInt(e.target.value); setMatchGoals(u); }} className="h-8 w-20" />
-                    <select className="h-8 border rounded px-2 text-xs" value={g.team} onChange={e => { const u = [...matchGoals]; u[i].team = e.target.value as any; setMatchGoals(u); }}>
+                    <select className="h-8 border rounded px-2 text-xs bg-background" value={g.team} onChange={e => { const u = [...matchGoals]; u[i].team = e.target.value as any; setMatchGoals(u); }}>
                       <option value="Mariners">Mariners</option>
                       <option value="Opponent">Opponent</option>
                     </select>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setMatchGoals(matchGoals.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setMatchGoals(matchGoals.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 ))}
               </div>

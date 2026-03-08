@@ -24,6 +24,16 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 191 82% 60%;
     --radius: 0.75rem;
+
+    /* Sidebar Variables */
+    --sidebar-background: 221 25% 12%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 220 70% 40%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 221 20% 25%;
+    --sidebar-accent-foreground: 191 82% 60%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 191 82% 60%;
   }
 }
 
