@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-stadium",
+      "description": "Toman Mariners Stadium at night",
+      "imageUrl": "https://picsum.photos/seed/mariners-stadium/1200/600",
+      "imageHint": "soccer stadium"
+    },
+    {
+      "id": "player-1",
+      "description": "Team Captain profile",
+      "imageUrl": "https://picsum.photos/seed/player1/400/500",
+      "imageHint": "soccer player"
+    },
+    {
+      "id": "player-2",
+      "description": "Star Striker profile",
+      "imageUrl": "https://picsum.photos/seed/player2/400/500",
+      "imageHint": "soccer athlete"
+    },
+    {
+      "id": "player-3",
+      "description": "Goalkeeper profile",
+      "imageUrl": "https://picsum.photos/seed/player3/400/500",
+      "imageHint": "goalkeeper"
+    },
+    {
+      "id": "staff-1",
+      "description": "Head Coach",
+      "imageUrl": "https://picsum.photos/seed/staff1/400/500",
+      "imageHint": "soccer manager"
+    },
+    {
+      "id": "merch-kit",
+      "description": "Official Home Kit",
+      "imageUrl": "https://picsum.photos/seed/kit/500/500",
+      "imageHint": "soccer jersey"
+    },
+    {
+      "id": "partnership-logo",
+      "description": "Sponsor logo background",
+      "imageUrl": "https://picsum.photos/seed/sponsor/400/200",
+      "imageHint": "corporate logo"
+    }
+  ]
 }
