@@ -12,6 +12,8 @@ export default function PartnershipPage() {
     { name: "Ocean Energy", tier: "Official Kit Sponsor" },
     { name: "Harbor Bank", tier: "Community Partner" },
     { name: "Sail Beverages", tier: "Official Drink" },
+    { name: "Digital Media Partner", tier: "Official Media" },
+    { name: "TLC (Touchline Creator)", tier: "Digital Content Partner" },
   ];
 
   return (
@@ -29,13 +31,15 @@ export default function PartnershipPage() {
           {/* Current Partners */}
           <section className="mb-24">
             <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-accent mb-12">OUR PRINCIPAL PARTNERS</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {sponsors.map((s) => (
-                <div key={s.name} className="flex flex-col items-center justify-center p-8 bg-card border border-accent/10 rounded-xl hover:border-accent/30 transition-all">
-                  <div className="h-16 w-full flex items-center justify-center mb-4">
-                    <div className="text-xl font-black italic opacity-40">{s.name.split(' ')[0]}</div>
+                <div key={s.name} className="flex flex-col items-center justify-center p-6 bg-card border border-accent/10 rounded-xl hover:border-accent/30 transition-all text-center">
+                  <div className="h-12 w-full flex items-center justify-center mb-3">
+                    <div className="text-lg font-black italic opacity-60 leading-tight">
+                      {s.name.length > 15 ? s.name.substring(0, 12) + '...' : s.name}
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase">{s.tier}</p>
+                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{s.tier}</p>
                 </div>
               ))}
             </div>
