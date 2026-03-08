@@ -281,12 +281,12 @@ export default function AdminPage() {
             <SidebarHeader className="h-16 flex items-center px-4 border-b">
               <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-5 w-5 text-accent" />
-                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden">ADMIN</span>
+                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden uppercase">ADMIN</span>
               </div>
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>
-                <SidebarGroupLabel>Management</SidebarGroupLabel>
+                <SidebarGroupLabel className="uppercase tracking-widest text-[10px]">Management</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
@@ -329,7 +329,7 @@ export default function AdminPage() {
             <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <h1 className="text-xl font-bold uppercase tracking-tight">{viewTitle}</h1>
+              <h1 className="text-sm sm:text-lg font-bold uppercase tracking-tight truncate">{viewTitle}</h1>
             </header>
             
             <main className="p-4 md:p-8">
@@ -338,16 +338,16 @@ export default function AdminPage() {
                 <div className="space-y-8">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h2 className="text-3xl font-black">MATCH CENTER</h2>
-                      <p className="text-muted-foreground">Manage the Mariner match schedule.</p>
+                      <h2 className="text-2xl sm:text-3xl font-black uppercase">MATCH CENTER</h2>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Manage the Mariner match schedule.</p>
                     </div>
                     <Dialog open={isAddFixtureOpen} onOpenChange={setIsAddFixtureOpen}>
                       <DialogTrigger asChild>
-                        <Button className="bg-accent text-accent-foreground font-bold">
+                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
                           <Plus className="h-4 w-4 mr-2" /> ADD FIXTURE
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                           <DialogTitle>Add New Fixture</DialogTitle>
                         </DialogHeader>
@@ -359,35 +359,48 @@ export default function AdminPage() {
                           </div>
                           <div className="grid gap-2"><Label>Venue</Label><Input value={newVenue} onChange={e => setNewVenue(e.target.value)} /></div>
                         </div>
-                        <DialogFooter><Button onClick={handleAddFixture} className="w-full">CREATE</Button></DialogFooter>
+                        <DialogFooter><Button onClick={handleAddFixture} className="w-full font-bold">CREATE FIXTURE</Button></DialogFooter>
                       </DialogContent>
                     </Dialog>
                   </div>
 
                   <Tabs defaultValue="upcoming" className="w-full">
-                    <TabsList className="mb-4"><TabsTrigger value="upcoming">Upcoming</TabsTrigger><TabsTrigger value="completed">Results</TabsTrigger></TabsList>
+                    <TabsList className="mb-6 grid w-full grid-cols-2 max-w-[400px]">
+                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                      <TabsTrigger value="completed">Results</TabsTrigger>
+                    </TabsList>
                     <TabsContent value="upcoming">
-                      <Card>
-                        <CardContent className="pt-6">
+                      <Card className="overflow-hidden">
+                        <CardContent className="p-0">
                           <div className="overflow-x-auto">
                             <Table>
-                              <TableHeader><TableRow><TableHead>Opponent</TableHead><TableHead>DateTime</TableHead><TableHead>Venue</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Opponent</TableHead>
+                                  <TableHead className="hidden sm:table-cell">DateTime</TableHead>
+                                  <TableHead className="hidden md:table-cell">Venue</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
                               <TableBody>
                                 {fixtures.filter(f => f.status === 'upcoming').map(f => (
                                   <TableRow key={f.id}>
-                                    <TableCell className="font-bold">{f.opponent}</TableCell>
-                                    <TableCell>{f.date} at {f.time}</TableCell>
-                                    <TableCell>{f.venue}</TableCell>
+                                    <TableCell>
+                                      <div className="font-bold">{f.opponent}</div>
+                                      <div className="sm:hidden text-xs text-muted-foreground">{f.date} • {f.time}</div>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell text-sm">{f.date} at {f.time}</TableCell>
+                                    <TableCell className="hidden md:table-cell text-sm">{f.venue}</TableCell>
                                     <TableCell className="text-right">
                                       <div className="flex justify-end gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => { setSelectedFixture(f); setMatchGoals([]); setIsResultDialogOpen(true); }}>ENTER RESULT</Button>
-                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                                        <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => { setSelectedFixture(f); setMatchGoals([]); setIsResultDialogOpen(true); }}>RESULT</Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
                                       </div>
                                     </TableCell>
                                   </TableRow>
                                 ))}
                                 {fixtures.filter(f => f.status === 'upcoming').length === 0 && (
-                                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">No upcoming fixtures scheduled.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">No upcoming fixtures scheduled.</TableCell></TableRow>
                                 )}
                               </TableBody>
                             </Table>
@@ -396,28 +409,28 @@ export default function AdminPage() {
                       </Card>
                     </TabsContent>
                     <TabsContent value="completed">
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {fixtures.filter(f => f.status === 'completed').map(f => (
-                          <Card key={f.id} className="p-6 border-accent/20">
+                          <Card key={f.id} className="p-5 border-accent/20 bg-card/50">
                             <div className="flex justify-between items-start mb-4">
                               <div>
-                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{f.date}</p>
-                                <h3 className="text-lg font-bold uppercase">MARINERS <span className="text-accent mx-1">{f.result?.marinersScore} - {f.result?.opponentScore}</span> {f.opponent}</h3>
+                                <p className="text-[10px] text-accent font-black uppercase tracking-widest mb-1">{f.date}</p>
+                                <h3 className="text-base font-bold uppercase tracking-tight">MARINERS <span className="text-accent mx-1">{f.result?.marinersScore} - {f.result?.opponentScore}</span> {f.opponent}</h3>
                               </div>
-                              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8 -mt-2 -mr-2" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-2 border-t pt-3">
                               {f.result?.goals.map((g, idx) => (
-                                <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Trophy className="h-3 w-3 text-accent" />
-                                  <span>{g.player} ({g.minute}') - {g.team}</span>
+                                <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Trophy className="h-3 w-3 text-accent shrink-0" />
+                                  <span className="truncate">{g.player} ({g.minute}') - {g.team}</span>
                                 </div>
                               ))}
                             </div>
                           </Card>
                         ))}
                         {fixtures.filter(f => f.status === 'completed').length === 0 && (
-                          <div className="col-span-full py-12 text-center text-muted-foreground italic">No match results recorded yet.</div>
+                          <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-xl">No match results recorded yet.</div>
                         )}
                       </div>
                     </TabsContent>
@@ -430,12 +443,12 @@ export default function AdminPage() {
                 <div className="space-y-8">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h2 className="text-3xl font-black">ROSTER MANAGEMENT</h2>
-                      <p className="text-muted-foreground">Maintain the official player roster.</p>
+                      <h2 className="text-2xl sm:text-3xl font-black uppercase">ROSTER</h2>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Maintain the official player roster.</p>
                     </div>
                     <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen}>
                       <DialogTrigger asChild>
-                        <Button className="bg-accent text-accent-foreground font-bold">
+                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
                           <Plus className="h-4 w-4 mr-2" /> ADD PLAYER
                         </Button>
                       </DialogTrigger>
@@ -471,17 +484,16 @@ export default function AdminPage() {
                       </DialogContent>
                     </Dialog>
                   </div>
-                  <Card>
-                    <CardContent className="pt-6">
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Image</TableHead>
+                              <TableHead className="w-[60px]">Img</TableHead>
                               <TableHead>Name</TableHead>
-                              <TableHead>Position</TableHead>
-                              <TableHead>Second Pos</TableHead>
-                              <TableHead>Height</TableHead>
+                              <TableHead className="hidden sm:table-cell">Position</TableHead>
+                              <TableHead className="hidden md:table-cell">Height</TableHead>
                               <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -489,7 +501,7 @@ export default function AdminPage() {
                             {players.map(p => (
                               <TableRow key={p.id}>
                                 <TableCell>
-                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted">
+                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted border border-accent/20">
                                     <Image 
                                       src={p.imageUrl} 
                                       alt={p.name} 
@@ -499,12 +511,14 @@ export default function AdminPage() {
                                     />
                                   </div>
                                 </TableCell>
-                                <TableCell className="font-bold">{p.name}</TableCell>
-                                <TableCell><Badge variant="outline">{p.pos}</Badge></TableCell>
-                                <TableCell><Badge variant="secondary" className="bg-muted text-muted-foreground">{p.secondPos}</Badge></TableCell>
-                                <TableCell className="text-sm">{p.height}</TableCell>
+                                <TableCell>
+                                  <div className="font-bold">{p.name}</div>
+                                  <div className="sm:hidden text-[10px]"><Badge variant="outline" className="px-1.5 py-0">{p.pos}</Badge></div>
+                                </TableCell>
+                                <TableCell className="hidden sm:table-cell"><Badge variant="outline">{p.pos}</Badge></TableCell>
+                                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{p.height}</TableCell>
                                 <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
+                                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -521,12 +535,12 @@ export default function AdminPage() {
                 <div className="space-y-8">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <h2 className="text-3xl font-black">CLUB OFFICIALS</h2>
-                      <p className="text-muted-foreground">Manage coaching and administrative roles.</p>
+                      <h2 className="text-2xl sm:text-3xl font-black uppercase">STAFF</h2>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Manage coaching and administrative roles.</p>
                     </div>
                     <Dialog open={isAddStaffOpen} onOpenChange={setIsAddStaffOpen}>
                       <DialogTrigger asChild>
-                        <Button className="bg-accent text-accent-foreground font-bold">
+                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
                           <Plus className="h-4 w-4 mr-2" /> ADD STAFF MEMBER
                         </Button>
                       </DialogTrigger>
@@ -538,17 +552,17 @@ export default function AdminPage() {
                           <div className="grid gap-2"><Label>Image URL</Label><Input placeholder="https://..." value={sImageUrl} onChange={e => setSImageUrl(e.target.value)} /></div>
                           <div className="grid gap-2"><Label>Bio</Label><Textarea value={sBio} onChange={e => setSBio(e.target.value)} /></div>
                         </div>
-                        <DialogFooter><Button onClick={handleAddStaff} className="w-full">SAVE MEMBER</Button></DialogFooter>
+                        <DialogFooter><Button onClick={handleAddStaff} className="w-full font-bold">SAVE MEMBER</Button></DialogFooter>
                       </DialogContent>
                     </Dialog>
                   </div>
-                  <Card>
-                    <CardContent className="pt-6">
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Image</TableHead>
+                              <TableHead className="w-[60px]">Img</TableHead>
                               <TableHead>Name</TableHead>
                               <TableHead>Role</TableHead>
                               <TableHead className="text-right">Actions</TableHead>
@@ -558,7 +572,7 @@ export default function AdminPage() {
                             {staff.map(s => (
                               <TableRow key={s.id}>
                                 <TableCell>
-                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted">
+                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted border border-accent/20">
                                     <Image 
                                       src={s.imageUrl} 
                                       alt={s.name} 
@@ -569,9 +583,9 @@ export default function AdminPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="font-bold">{s.name}</TableCell>
-                                <TableCell className="text-accent text-sm font-semibold">{s.role}</TableCell>
+                                <TableCell className="text-accent text-xs sm:text-sm font-semibold uppercase tracking-wider">{s.role}</TableCell>
                                 <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setStaff(staff.filter(x => x.id !== s.id))}><Trash2 className="h-4 w-4" /></Button>
+                                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setStaff(staff.filter(x => x.id !== s.id))}><Trash2 className="h-4 w-4" /></Button>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -589,31 +603,45 @@ export default function AdminPage() {
 
       {/* Shared Result Dialog */}
       <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="w-[95%] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Enter Match Result</DialogTitle></DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-8 p-4 bg-muted/30 rounded-lg text-center">
-              <div><Label className="text-accent font-bold">MARINERS</Label><Input type="number" value={mScore} onChange={e => setMScore(parseInt(e.target.value))} className="text-center text-2xl font-black mt-2" /></div>
-              <div><Label className="font-bold">{selectedFixture?.opponent.toUpperCase() || "OPPONENT"}</Label><Input type="number" value={oScore} onChange={e => setOScore(parseInt(e.target.value))} className="text-center text-2xl font-black mt-2" /></div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-8 p-4 bg-muted/30 rounded-lg text-center">
+              <div><Label className="text-accent font-bold text-[10px] sm:text-xs">MARINERS</Label><Input type="number" value={mScore} onChange={e => setMScore(parseInt(e.target.value))} className="text-center text-xl sm:text-3xl font-black mt-1" /></div>
+              <div><Label className="font-bold text-[10px] sm:text-xs uppercase">{selectedFixture?.opponent || "OPPONENT"}</Label><Input type="number" value={oScore} onChange={e => setOScore(parseInt(e.target.value))} className="text-center text-xl sm:text-3xl font-black mt-1" /></div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between"><h4 className="text-sm font-bold uppercase tracking-widest">GOALSCORERS</h4><Button variant="outline" size="sm" onClick={() => setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])}>ADD GOAL</Button></div>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+              <div className="flex items-center justify-between"><h4 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">GOALSCORERS</h4><Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])}>ADD GOAL</Button></div>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                 {matchGoals.map((g, i) => (
-                  <div key={i} className="flex gap-2 items-center">
-                    <Input placeholder="Player Name" value={g.player} onChange={e => { const u = [...matchGoals]; u[i].player = e.target.value; setMatchGoals(u); }} className="h-8" />
-                    <Input type="number" placeholder="Min" value={g.minute} onChange={e => { const u = [...matchGoals]; u[i].minute = parseInt(e.target.value); setMatchGoals(u); }} className="h-8 w-20" />
-                    <select className="h-8 border rounded px-2 text-xs bg-background" value={g.team} onChange={e => { const u = [...matchGoals]; u[i].team = e.target.value as any; setMatchGoals(u); }}>
-                      <option value="Mariners">Mariners</option>
-                      <option value="Opponent">Opponent</option>
-                    </select>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setMatchGoals(matchGoals.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+                  <div key={i} className="flex flex-col sm:flex-row gap-2 p-3 bg-muted/20 rounded-md border border-accent/10">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-[9px] uppercase text-muted-foreground">Player</Label>
+                      <Input placeholder="Player Name" value={g.player} onChange={e => { const u = [...matchGoals]; u[i].player = e.target.value; setMatchGoals(u); }} className="h-8 text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 shrink-0 sm:w-24">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] uppercase text-muted-foreground">Min</Label>
+                        <Input type="number" placeholder="Min" value={g.minute} onChange={e => { const u = [...matchGoals]; u[i].minute = parseInt(e.target.value); setMatchGoals(u); }} className="h-8 text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] uppercase text-muted-foreground">Team</Label>
+                        <select className="h-8 w-full border rounded px-2 text-xs bg-background" value={g.team} onChange={e => { const u = [...matchGoals]; u[i].team = e.target.value as any; setMatchGoals(u); }}>
+                          <option value="Mariners">Mariners</option>
+                          <option value="Opponent">Opponent</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-end">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setMatchGoals(matchGoals.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
                   </div>
                 ))}
+                {matchGoals.length === 0 && <p className="text-center text-[10px] text-muted-foreground italic py-4">No goals added for this match.</p>}
               </div>
             </div>
           </div>
-          <DialogFooter><Button onClick={handleSubmitResult} className="w-full bg-accent text-accent-foreground font-bold">RECORD FINAL RESULT</Button></DialogFooter>
+          <DialogFooter><Button onClick={handleSubmitResult} className="w-full bg-accent text-accent-foreground font-black h-12">RECORD FINAL RESULT</Button></DialogFooter>
         </DialogContent>
       </Dialog>
       <Footer />
