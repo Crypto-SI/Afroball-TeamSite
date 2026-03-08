@@ -43,12 +43,16 @@ export default function Home() {
               Experience the roar of the crowd at Mariner Dome. Join us as we set sail for another championship season.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-12 px-8">
-                GET TICKETS
-              </Button>
-              <Button size="lg" variant="outline" className="border-accent text-accent hover:bg-accent/10 h-12 px-8">
-                FIRST TEAM SQUAD
-              </Button>
+              <Link href="/tickets">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold h-12 px-8">
+                  GET TICKETS
+                </Button>
+              </Link>
+              <Link href="/players">
+                <Button size="lg" variant="outline" className="border-accent text-accent hover:bg-accent/10 h-12 px-8">
+                  FIRST TEAM SQUAD
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
