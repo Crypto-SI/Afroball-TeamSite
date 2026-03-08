@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   History,
   LayoutDashboard,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Image as ImageIcon
 } from "lucide-react";
 import {
   Table,
@@ -62,6 +63,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 
 // --- Types ---
 
@@ -90,8 +92,9 @@ type Player = {
   id: string;
   name: string;
   pos: string;
-  no: string;
-  bio: string;
+  secondPos: string;
+  height: string;
+  imageUrl: string;
 };
 
 type StaffMember = {
@@ -133,8 +136,22 @@ const INITIAL_FIXTURES: Fixture[] = [
 ];
 
 const INITIAL_PLAYERS: Player[] = [
-  { id: "p1", name: "Leo Marino", pos: "Defender", no: "4", bio: "The rock of the defense and club captain." },
-  { id: "p2", name: "Elias Thorne", pos: "Forward", no: "9", bio: "A clinical finisher with a record-breaking season." },
+  { 
+    id: "p1", 
+    name: "Leo Marino", 
+    pos: "Center Back", 
+    secondPos: "Right Back", 
+    height: "188cm", 
+    imageUrl: "https://picsum.photos/seed/player1/400/500" 
+  },
+  { 
+    id: "p2", 
+    name: "Elias Thorne", 
+    pos: "Striker", 
+    secondPos: "Left Winger", 
+    height: "182cm", 
+    imageUrl: "https://picsum.photos/seed/player2/400/500" 
+  },
 ];
 
 const INITIAL_STAFF: StaffMember[] = [
@@ -169,8 +186,9 @@ export default function AdminPage() {
   // Form States - Players
   const [pName, setPName] = useState("");
   const [pPos, setPPos] = useState("");
-  const [pNo, setPNo] = useState("");
-  const [pBio, setPBio] = useState("");
+  const [pSecondPos, setPSecondPos] = useState("");
+  const [pHeight, setPHeight] = useState("");
+  const [pImageUrl, setPImageUrl] = useState("");
 
   // Form States - Staff
   const [sName, setSName] = useState("");
@@ -212,12 +230,13 @@ export default function AdminPage() {
       id: Math.random().toString(36).substr(2, 9),
       name: pName,
       pos: pPos,
-      no: pNo,
-      bio: pBio
+      secondPos: pSecondPos,
+      height: pHeight,
+      imageUrl: pImageUrl || `https://picsum.photos/seed/${Math.random()}/400/500`
     };
     setPlayers([...players, player]);
     setIsAddPlayerOpen(false);
-    setPName(""); setPPos(""); setPNo(""); setPBio("");
+    setPName(""); setPPos(""); setPSecondPos(""); setPHeight(""); setPImageUrl("");
   };
 
   const handleAddStaff = () => {
@@ -405,17 +424,35 @@ export default function AdminPage() {
                           <Plus className="h-4 w-4 mr-2" /> ADD PLAYER
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader><DialogTitle>Add New Player</DialogTitle></DialogHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2"><Label>Name</Label><Input value={pName} onChange={e => setPName(e.target.value)} /></div>
-                            <div className="grid gap-2"><Label>Number</Label><Input value={pNo} onChange={e => setPNo(e.target.value)} /></div>
+                          <div className="grid gap-2">
+                            <Label>Name</Label>
+                            <Input placeholder="Full Name" value={pName} onChange={e => setPName(e.target.value)} />
                           </div>
-                          <div className="grid gap-2"><Label>Position</Label><Input value={pPos} onChange={e => setPPos(e.target.value)} /></div>
-                          <div className="grid gap-2"><Label>Bio</Label><Textarea value={pBio} onChange={e => setPBio(e.target.value)} /></div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label>Position</Label>
+                              <Input placeholder="Primary Pos" value={pPos} onChange={e => setPPos(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Second Position</Label>
+                              <Input placeholder="Secondary Pos" value={pSecondPos} onChange={e => setPSecondPos(e.target.value)} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label>Height</Label>
+                              <Input placeholder="e.g. 185cm" value={pHeight} onChange={e => setPHeight(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label>Image URL</Label>
+                              <Input placeholder="https://..." value={pImageUrl} onChange={e => setPImageUrl(e.target.value)} />
+                            </div>
+                          </div>
                         </div>
-                        <DialogFooter><Button onClick={handleAddPlayer} className="w-full">SAVE PLAYER</Button></DialogFooter>
+                        <DialogFooter><Button onClick={handleAddPlayer} className="w-full font-bold">SAVE PLAYER</Button></DialogFooter>
                       </DialogContent>
                     </Dialog>
                   </div>
@@ -423,13 +460,34 @@ export default function AdminPage() {
                     <CardContent className="pt-6">
                       <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Name</TableHead><TableHead>Position</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Image</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Position</TableHead>
+                              <TableHead>Second Pos</TableHead>
+                              <TableHead>Height</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
                           <TableBody>
                             {players.map(p => (
                               <TableRow key={p.id}>
-                                <TableCell className="font-black text-accent">{p.no}</TableCell>
+                                <TableCell>
+                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted">
+                                    <Image 
+                                      src={p.imageUrl} 
+                                      alt={p.name} 
+                                      fill 
+                                      className="object-cover"
+                                      sizes="40px"
+                                    />
+                                  </div>
+                                </TableCell>
                                 <TableCell className="font-bold">{p.name}</TableCell>
                                 <TableCell><Badge variant="outline">{p.pos}</Badge></TableCell>
+                                <TableCell><Badge variant="secondary" className="bg-muted text-muted-foreground">{p.secondPos}</Badge></TableCell>
+                                <TableCell className="text-sm">{p.height}</TableCell>
                                 <TableCell className="text-right">
                                   <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
                                 </TableCell>
