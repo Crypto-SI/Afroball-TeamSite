@@ -12,7 +12,7 @@ export default function PartnershipPage() {
     { name: "Ocean Energy", tier: "Official Kit Sponsor" },
     { name: "Harbor Bank", tier: "Community Partner" },
     { name: "Sail Beverages", tier: "Official Drink" },
-    { name: "Digital Media Partner", tier: "Official Media" },
+    { name: "Webara Studio", tier: "Digital Media Partner", href: "https://webarastudio.com" },
     { name: "TLC (Touchline Creator)", tier: "Digital Content Partner" },
   ];
 
@@ -32,16 +32,28 @@ export default function PartnershipPage() {
           <section className="mb-24">
             <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-accent mb-12">OUR PRINCIPAL PARTNERS</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-              {sponsors.map((s) => (
-                <div key={s.name} className="flex flex-col items-center justify-center p-6 bg-card border border-accent/10 rounded-xl hover:border-accent/30 transition-all text-center">
-                  <div className="h-12 w-full flex items-center justify-center mb-3">
-                    <div className="text-lg font-black italic opacity-60 leading-tight">
-                      {s.name.length > 15 ? s.name.substring(0, 12) + '...' : s.name}
+              {sponsors.map((s) => {
+                const CardUI = (
+                  <div className="flex flex-col items-center justify-center p-6 bg-card border border-accent/10 rounded-xl hover:border-accent/30 transition-all text-center h-full">
+                    <div className="h-12 w-full flex items-center justify-center mb-3">
+                      <div className="text-lg font-black italic opacity-60 leading-tight">
+                        {s.name.length > 15 ? s.name.substring(0, 12) + '...' : s.name}
+                      </div>
                     </div>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{s.tier}</p>
                   </div>
-                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{s.tier}</p>
-                </div>
-              ))}
+                );
+
+                return s.href ? (
+                  <Link key={s.name} href={s.href} target="_blank" rel="noopener noreferrer" className="block transition-transform hover:scale-[1.02]">
+                    {CardUI}
+                  </Link>
+                ) : (
+                  <div key={s.name}>
+                    {CardUI}
+                  </div>
+                );
+              })}
             </div>
           </section>
 
