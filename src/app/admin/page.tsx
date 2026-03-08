@@ -102,6 +102,7 @@ type StaffMember = {
   name: string;
   role: string;
   bio: string;
+  imageUrl: string;
 };
 
 // --- Initial Data ---
@@ -155,8 +156,20 @@ const INITIAL_PLAYERS: Player[] = [
 ];
 
 const INITIAL_STAFF: StaffMember[] = [
-  { id: "s1", name: "Victor Helm", role: "Head Coach", bio: "A master tactician with 20 years of experience." },
-  { id: "s2", name: "Sarah Anchor", role: "Sporting Director", bio: "Leading the club's long-term vision and recruitment." },
+  { 
+    id: "s1", 
+    name: "Victor Helm", 
+    role: "Head Coach", 
+    bio: "A master tactician with 20 years of experience.",
+    imageUrl: "https://picsum.photos/seed/staff1/400/500"
+  },
+  { 
+    id: "s2", 
+    name: "Sarah Anchor", 
+    role: "Sporting Director", 
+    bio: "Leading the club's long-term vision and recruitment.",
+    imageUrl: "https://picsum.photos/seed/staff2/400/500"
+  },
 ];
 
 export default function AdminPage() {
@@ -194,6 +207,7 @@ export default function AdminPage() {
   const [sName, setSName] = useState("");
   const [sRole, setSRole] = useState("");
   const [sBio, setSBio] = useState("");
+  const [sImageUrl, setSImageUrl] = useState("");
 
   // --- Handlers ---
 
@@ -232,7 +246,7 @@ export default function AdminPage() {
       pos: pPos,
       secondPos: pSecondPos,
       height: pHeight,
-      imageUrl: pImageUrl || `https://picsum.photos/seed/${Math.random()}/400/500`
+      imageUrl: pImageUrl || `https://picsum.photos/seed/p${Math.random()}/400/500`
     };
     setPlayers([...players, player]);
     setIsAddPlayerOpen(false);
@@ -244,11 +258,12 @@ export default function AdminPage() {
       id: Math.random().toString(36).substr(2, 9),
       name: sName,
       role: sRole,
-      bio: sBio
+      bio: sBio,
+      imageUrl: sImageUrl || `https://picsum.photos/seed/s${Math.random()}/400/500`
     };
     setStaff([...staff, member]);
     setIsAddStaffOpen(false);
-    setSName(""); setSRole(""); setSBio("");
+    setSName(""); setSRole(""); setSBio(""); setSImageUrl("");
   };
 
   const viewTitle = {
@@ -520,6 +535,7 @@ export default function AdminPage() {
                         <div className="grid gap-4 py-4">
                           <div className="grid gap-2"><Label>Name</Label><Input value={sName} onChange={e => setSName(e.target.value)} /></div>
                           <div className="grid gap-2"><Label>Role</Label><Input value={sRole} onChange={e => setSRole(e.target.value)} /></div>
+                          <div className="grid gap-2"><Label>Image URL</Label><Input placeholder="https://..." value={sImageUrl} onChange={e => setSImageUrl(e.target.value)} /></div>
                           <div className="grid gap-2"><Label>Bio</Label><Textarea value={sBio} onChange={e => setSBio(e.target.value)} /></div>
                         </div>
                         <DialogFooter><Button onClick={handleAddStaff} className="w-full">SAVE MEMBER</Button></DialogFooter>
@@ -530,10 +546,28 @@ export default function AdminPage() {
                     <CardContent className="pt-6">
                       <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Image</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Role</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
                           <TableBody>
                             {staff.map(s => (
                               <TableRow key={s.id}>
+                                <TableCell>
+                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted">
+                                    <Image 
+                                      src={s.imageUrl} 
+                                      alt={s.name} 
+                                      fill 
+                                      className="object-cover"
+                                      sizes="40px"
+                                    />
+                                  </div>
+                                </TableCell>
                                 <TableCell className="font-bold">{s.name}</TableCell>
                                 <TableCell className="text-accent text-sm font-semibold">{s.role}</TableCell>
                                 <TableCell className="text-right">
