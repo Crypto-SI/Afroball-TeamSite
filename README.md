@@ -1,4 +1,6 @@
-# Toman Mariners FC - Official Club Platform
+# Football Club Site Template - Toman Mariners FC
+
+**Note: This application is a comprehensive template for a professional football club website. "Toman Mariners FC" is used as a placeholder name throughout the project and can be easily rebranded for any team.**
 
 This is the official web platform for **Toman Mariners FC**, built with Next.js and powered by Genkit for AI-driven match insights. It serves as a hub for fans to check fixtures, meet the squad, buy merchandise, and for club administrators to manage content via the Editor Dashboard.
 
