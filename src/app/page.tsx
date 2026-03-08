@@ -6,7 +6,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Trophy, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Trophy, ArrowRight, Instagram, Twitter } from "lucide-react";
 import { AIMatchInsight } from "@/components/ai-match-insight";
 
 export default function Home() {
@@ -63,7 +63,7 @@ export default function Home() {
             {/* Latest Result */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">LATEST RESULT</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">LATEST RESULT</h2>
                 <Badge variant="outline">League Match</Badge>
               </div>
               <Card className="bg-card border-accent/20 overflow-hidden">
@@ -87,7 +87,7 @@ export default function Home() {
                   </div>
                 </div>
                 <CardContent className="pt-6">
-                  <CardTitle className="mb-2 text-xl sm:text-2xl">Mariners Dominate Anchors at Home</CardTitle>
+                  <CardTitle className="mb-2 text-xl sm:text-2xl uppercase">Mariners Dominate Anchors at Home</CardTitle>
                   <CardDescription className="line-clamp-3">
                     {lastMatchReport}
                   </CardDescription>
@@ -101,34 +101,79 @@ export default function Home() {
             {/* Upcoming Fixture */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">NEXT FIXTURE</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">NEXT FIXTURE</h2>
                 <Link href="/tickets">
-                  <Button variant="link" className="text-accent p-0 flex items-center gap-1 text-sm">
+                  <Button variant="link" className="text-accent p-0 flex items-center gap-1 text-sm uppercase font-bold">
                     Tickets Available <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
-              <Card className="bg-card border-primary/20">
+              <Card className="bg-card border-primary/20 h-full">
                 <CardHeader className="flex flex-row items-center gap-4">
                   <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
                     <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg sm:text-xl">Vs. Northern Gulls</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl uppercase">Vs. Northern Gulls</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">Saturday, Oct 21 • 18:00</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                     <MapPin className="h-4 w-4 text-accent" />
                     The Gulls' Nest, North Harbor
                   </div>
-                  <div className="mt-4">
-                    <AIMatchInsight title="Upcoming Fixture" context={nextMatchInfo} />
-                  </div>
+                  <AIMatchInsight title="Upcoming Fixture" context={nextMatchInfo} />
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </section>
+
+        {/* Socials Section */}
+        <section className="container mx-auto px-4 py-12 border-t border-accent/10">
+          <div className="mb-8 text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">STAY CONNECTED</h2>
+            <p className="text-sm text-muted-foreground">Follow the crew across all platforms.</p>
+          </div>
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Instagram Feed Placeholder */}
+            <Card className="bg-card/50 border-accent/10 hover:border-accent/30 transition-colors">
+              <CardHeader className="flex flex-row items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center shrink-0">
+                  <Instagram className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold">INSTAGRAM</CardTitle>
+                  <Link href="https://instagram.com" target="_blank" className="text-xs text-accent hover:underline font-semibold">@tomanmarinersfc</Link>
+                </div>
+              </CardHeader>
+              <CardContent className="h-48 flex items-center justify-center border-t border-accent/5 bg-accent/5 rounded-b-lg">
+                <p className="text-sm font-medium text-muted-foreground italic flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-accent animate-pulse" />
+                  Feed coming soon
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Twitter/X Feed Placeholder */}
+            <Card className="bg-card/50 border-accent/10 hover:border-accent/30 transition-colors">
+              <CardHeader className="flex flex-row items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                  <Twitter className="h-5 w-5 text-background" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold">TWITTER / X</CardTitle>
+                  <Link href="https://twitter.com" target="_blank" className="text-xs text-accent hover:underline font-semibold">@TomanMariners</Link>
+                </div>
+              </CardHeader>
+              <CardContent className="h-48 flex items-center justify-center border-t border-accent/5 bg-accent/5 rounded-b-lg">
+                <p className="text-sm font-medium text-muted-foreground italic flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-accent animate-pulse" />
+                  Feed coming soon
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
@@ -146,8 +191,8 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                 <div className="absolute bottom-6 left-6 pr-6">
-                  <h3 className="text-xl sm:text-2xl font-bold">OFFICIAL SHOP</h3>
-                  <p className="text-accent flex items-center gap-2 text-sm font-semibold">Explore the new kit <ArrowRight className="h-4 w-4" /></p>
+                  <h3 className="text-xl sm:text-2xl font-bold uppercase">OFFICIAL SHOP</h3>
+                  <p className="text-accent flex items-center gap-2 text-sm font-semibold uppercase">Explore the new kit <ArrowRight className="h-4 w-4" /></p>
                 </div>
               </div>
             </Link>
@@ -163,8 +208,8 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                 <div className="absolute bottom-6 left-6 pr-6">
-                  <h3 className="text-xl sm:text-2xl font-bold">MEET THE SQUAD</h3>
-                  <p className="text-accent flex items-center gap-2 text-sm font-semibold">View player stats <ArrowRight className="h-4 w-4" /></p>
+                  <h3 className="text-xl sm:text-2xl font-bold uppercase">MEET THE SQUAD</h3>
+                  <p className="text-accent flex items-center gap-2 text-sm font-semibold uppercase">View player stats <ArrowRight className="h-4 w-4" /></p>
                 </div>
               </div>
             </Link>
@@ -176,8 +221,8 @@ export default function Home() {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                 <div className="absolute bottom-6 left-6 pr-6">
-                  <h3 className="text-xl sm:text-2xl font-bold">PARTNERSHIPS</h3>
-                  <p className="text-accent flex items-center gap-2 text-sm font-semibold">Grow with the Mariners <ArrowRight className="h-4 w-4" /></p>
+                  <h3 className="text-xl sm:text-2xl font-bold uppercase">PARTNERSHIPS</h3>
+                  <p className="text-accent flex items-center gap-2 text-sm font-semibold uppercase">Grow with the Mariners <ArrowRight className="h-4 w-4" /></p>
                 </div>
               </div>
             </Link>
