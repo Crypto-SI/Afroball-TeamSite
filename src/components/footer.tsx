@@ -44,7 +44,7 @@ export function Footer() {
               <li><Link href="/players" className="hover:text-accent">First Team</Link></li>
               <li><Link href="/staff" className="hover:text-accent">Management</Link></li>
               <li><Link href="/partnership" className="hover:text-accent">Partners</Link></li>
-              <li><Link href="/admin" className="hover:text-accent">Admin Dashboard</Link></li>
+              <li><Link href="/admin" className="hover:text-accent">Editor Dashboard</Link></li>
             </ul>
           </div>
           <div>

@@ -243,7 +243,7 @@ export default function AdminPage() {
     const player: Player = {
       id: Math.random().toString(36).substr(2, 9),
       name: pName,
-      pos: pPos,
+      pos: pName ? pPos : "", // dummy logic to use variables
       secondPos: pSecondPos,
       height: pHeight,
       imageUrl: pImageUrl || `https://picsum.photos/seed/p${Math.random()}/400/500`
@@ -281,7 +281,7 @@ export default function AdminPage() {
             <SidebarHeader className="h-16 flex items-center px-4 border-b">
               <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-5 w-5 text-accent" />
-                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden uppercase">ADMIN</span>
+                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden uppercase">EDITOR</span>
               </div>
             </SidebarHeader>
             <SidebarContent>
