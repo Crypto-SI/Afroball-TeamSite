@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "hero-stadium",
-      "description": "Toman Mariners Stadium at night",
-      "imageUrl": "https://picsum.photos/seed/mariners-stadium/1200/600",
-      "imageHint": "soccer stadium"
+      "description": "Africans playing football in a 3000 seater stadium",
+      "imageUrl": "https://picsum.photos/seed/african-football-stadium/1200/600",
+      "imageHint": "african football"
     },
     {
       "id": "player-1",
