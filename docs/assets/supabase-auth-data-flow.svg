@@ -1,0 +1,44 @@
+<svg width="1400" height="860" viewBox="0 0 1400 860" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="860" fill="#0B1020"/>
+  <rect x="40" y="40" width="1320" height="780" rx="28" fill="#111827" stroke="#374151" stroke-width="2"/>
+  <text x="80" y="110" fill="#F9FAFB" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700">Admin Auth And Data Flow</text>
+  <text x="80" y="148" fill="#9CA3AF" font-family="Arial, Helvetica, sans-serif" font-size="20">How club editors move from login to protected content management.</text>
+
+  <rect x="100" y="230" width="210" height="120" rx="20" fill="#1D4ED8"/>
+  <text x="145" y="280" fill="#EFF6FF" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">1. Login</text>
+  <text x="125" y="314" fill="#DBEAFE" font-family="Arial, Helvetica, sans-serif" font-size="18">Editor signs in with</text>
+  <text x="125" y="340" fill="#DBEAFE" font-family="Arial, Helvetica, sans-serif" font-size="18">Supabase Auth.</text>
+
+  <rect x="380" y="230" width="230" height="120" rx="20" fill="#7C3AED"/>
+  <text x="430" y="280" fill="#F5F3FF" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">2. Session</text>
+  <text x="405" y="314" fill="#EDE9FE" font-family="Arial, Helvetica, sans-serif" font-size="18">SSR middleware checks</text>
+  <text x="405" y="340" fill="#EDE9FE" font-family="Arial, Helvetica, sans-serif" font-size="18">the authenticated user.</text>
+
+  <rect x="690" y="230" width="250" height="120" rx="20" fill="#059669"/>
+  <text x="740" y="280" fill="#ECFDF5" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">3. RLS</text>
+  <text x="720" y="314" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="18">Policies allow editors</text>
+  <text x="720" y="340" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="18">to write approved tables.</text>
+
+  <rect x="1020" y="230" width="260" height="120" rx="20" fill="#EA580C"/>
+  <text x="1060" y="280" fill="#FFF7ED" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">4. Admin Writes</text>
+  <text x="1050" y="314" fill="#FFEDD5" font-family="Arial, Helvetica, sans-serif" font-size="18">Fixtures, players, staff,</text>
+  <text x="1050" y="340" fill="#FFEDD5" font-family="Arial, Helvetica, sans-serif" font-size="18">results, and media update.</text>
+
+  <path d="M310 290H380" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M610 290H690" stroke="#A78BFA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M940 290H1020" stroke="#34D399" stroke-width="8" stroke-linecap="round"/>
+
+  <rect x="150" y="500" width="500" height="220" rx="24" fill="#1F2937" stroke="#60A5FA" stroke-width="2"/>
+  <text x="190" y="555" fill="#F3F4F6" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Public Visitor Path</text>
+  <text x="190" y="600" fill="#D1D5DB" font-family="Arial, Helvetica, sans-serif" font-size="20">Uses anon key only.</text>
+  <text x="190" y="632" fill="#D1D5DB" font-family="Arial, Helvetica, sans-serif" font-size="20">Can read fixtures, players, staff, and site settings.</text>
+  <text x="190" y="664" fill="#D1D5DB" font-family="Arial, Helvetica, sans-serif" font-size="20">Cannot reach `/admin` or write any records.</text>
+
+  <rect x="750" y="500" width="500" height="220" rx="24" fill="#1F2937" stroke="#F59E0B" stroke-width="2"/>
+  <text x="790" y="555" fill="#F9FAFB" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Editor Path</text>
+  <text x="790" y="600" fill="#E5E7EB" font-family="Arial, Helvetica, sans-serif" font-size="20">Authenticated through Supabase Auth.</text>
+  <text x="790" y="632" fill="#E5E7EB" font-family="Arial, Helvetica, sans-serif" font-size="20">RLS plus profiles role check controls write access.</text>
+  <text x="790" y="664" fill="#E5E7EB" font-family="Arial, Helvetica, sans-serif" font-size="20">Uploads assets to `team-media` and updates records.</text>
+
+  <text x="80" y="780" fill="#6B7280" font-family="Arial, Helvetica, sans-serif" font-size="18">Keep the service role key server-only. Browser code should use the public anon key and rely on RLS.</text>
+</svg>

@@ -1,0 +1,61 @@
+<svg width="1400" height="860" viewBox="0 0 1400 860" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="860" fill="#0F172A"/>
+  <rect x="40" y="40" width="1320" height="780" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+  <text x="80" y="110" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700">Team Site Template: Supabase Architecture</text>
+  <text x="80" y="148" fill="#94A3B8" font-family="Arial, Helvetica, sans-serif" font-size="20">Reusable setup for fixtures, players, staff, media, and protected admin workflows.</text>
+
+  <rect x="80" y="220" width="340" height="200" rx="24" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+  <text x="110" y="270" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Public Next.js Site</text>
+  <text x="110" y="310" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">Homepage, players, staff, tickets,</text>
+  <text x="110" y="338" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">partnership, merch, contact.</text>
+  <text x="110" y="386" fill="#7DD3FC" font-family="Arial, Helvetica, sans-serif" font-size="18">Reads published content with anon key</text>
+
+  <rect x="80" y="500" width="340" height="220" rx="24" fill="#1E293B" stroke="#A78BFA" stroke-width="2"/>
+  <text x="110" y="550" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Admin UI</text>
+  <text x="110" y="590" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">Protected `/admin` pages for editors.</text>
+  <text x="110" y="618" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">Creates fixtures, enters results,</text>
+  <text x="110" y="646" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">manages players and staff.</text>
+  <text x="110" y="694" fill="#C4B5FD" font-family="Arial, Helvetica, sans-serif" font-size="18">Uses authenticated Supabase session</text>
+
+  <rect x="530" y="160" width="370" height="560" rx="28" fill="#052E2B" stroke="#34D399" stroke-width="2"/>
+  <text x="565" y="220" fill="#ECFDF5" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">Supabase</text>
+  <rect x="565" y="260" width="300" height="88" rx="16" fill="#064E3B"/>
+  <text x="590" y="314" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Postgres</text>
+  <text x="590" y="340" fill="#A7F3D0" font-family="Arial, Helvetica, sans-serif" font-size="16">fixtures, goals, players, staff, profiles</text>
+
+  <rect x="565" y="372" width="300" height="88" rx="16" fill="#064E3B"/>
+  <text x="590" y="426" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Auth</text>
+  <text x="590" y="452" fill="#A7F3D0" font-family="Arial, Helvetica, sans-serif" font-size="16">email login, sessions, admin protection</text>
+
+  <rect x="565" y="484" width="300" height="88" rx="16" fill="#064E3B"/>
+  <text x="590" y="538" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Storage</text>
+  <text x="590" y="564" fill="#A7F3D0" font-family="Arial, Helvetica, sans-serif" font-size="16">team-media bucket for photos and assets</text>
+
+  <rect x="565" y="596" width="300" height="88" rx="16" fill="#064E3B"/>
+  <text x="590" y="650" fill="#D1FAE5" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">RLS Policies</text>
+  <text x="590" y="676" fill="#A7F3D0" font-family="Arial, Helvetica, sans-serif" font-size="16">public reads, editor writes</text>
+
+  <rect x="980" y="250" width="300" height="180" rx="24" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+  <text x="1015" y="300" fill="#FEF3C7" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Environment</text>
+  <text x="1015" y="340" fill="#FDE68A" font-family="Arial, Helvetica, sans-serif" font-size="18">NEXT_PUBLIC_SUPABASE_URL</text>
+  <text x="1015" y="370" fill="#FDE68A" font-family="Arial, Helvetica, sans-serif" font-size="18">NEXT_PUBLIC_SUPABASE_ANON_KEY</text>
+  <text x="1015" y="400" fill="#FDE68A" font-family="Arial, Helvetica, sans-serif" font-size="18">SUPABASE_SERVICE_ROLE_KEY</text>
+
+  <rect x="980" y="500" width="300" height="180" rx="24" fill="#1E293B" stroke="#F472B6" stroke-width="2"/>
+  <text x="1015" y="550" fill="#FCE7F3" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">AI Layer</text>
+  <text x="1015" y="590" fill="#FBCFE8" font-family="Arial, Helvetica, sans-serif" font-size="18">Genkit remains separate from</text>
+  <text x="1015" y="618" fill="#FBCFE8" font-family="Arial, Helvetica, sans-serif" font-size="18">Supabase and still uses</text>
+  <text x="1015" y="646" fill="#FBCFE8" font-family="Arial, Helvetica, sans-serif" font-size="18">GOOGLE_API_KEY.</text>
+
+  <path d="M420 320H530" stroke="#38BDF8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M420 610H530" stroke="#A78BFA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M900 340H980" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
+  <path d="M900 590H980" stroke="#F472B6" stroke-width="8" stroke-linecap="round"/>
+
+  <circle cx="475" cy="320" r="8" fill="#38BDF8"/>
+  <circle cx="475" cy="610" r="8" fill="#A78BFA"/>
+  <circle cx="940" cy="340" r="8" fill="#F59E0B"/>
+  <circle cx="940" cy="590" r="8" fill="#F472B6"/>
+
+  <text x="80" y="780" fill="#64748B" font-family="Arial, Helvetica, sans-serif" font-size="18">Template rule: one Supabase project per club site, public reads through RLS, editor writes through authenticated sessions.</text>
+</svg>

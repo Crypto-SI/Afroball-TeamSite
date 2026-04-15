@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Anchor, Menu, X, ShoppingBag, Ticket, Users, Phone, ShieldCheck } from "lucide-react";
+import { Anchor, CalendarDays, Menu, X, ShoppingBag, Ticket, Users, Phone, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,7 @@ export function Navbar() {
   const navItems = [
     { name: "Players", href: "/players", icon: Users },
     { name: "Staff", href: "/staff", icon: ShieldCheck },
+    { name: "Fixtures", href: "/fixtures", icon: CalendarDays },
     { name: "Tickets", href: "/tickets", icon: Ticket },
     { name: "Merch", href: "/merch", icon: ShoppingBag },
     { name: "Partnership", href: "/partnership", icon: ShieldCheck },

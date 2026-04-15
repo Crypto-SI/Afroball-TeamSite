@@ -1,54 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  Calendar,
+  LayoutDashboard,
+  LogOut,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Calendar, 
-  Plus, 
-  Trophy, 
-  MapPin, 
-  Clock, 
-  Trash2, 
-  Edit3, 
-  CheckCircle2,
-  Users,
-  ShieldCheck,
-  History,
-  LayoutDashboard,
-  Menu as MenuIcon,
-  Image as ImageIcon
-} from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -63,214 +51,438 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  INITIAL_FIXTURES,
+  INITIAL_PLAYERS,
+  INITIAL_STAFF,
+  mapFixtureRecord,
+  mapPlayerRecord,
+  mapStaffRecord,
+  type Fixture,
+  type Goal,
+  type Player,
+  type StaffMember,
+} from "@/lib/team-site-data";
+import type { Database } from "@/types/database";
 
-// --- Types ---
-
-type Goal = {
-  id: string;
-  player: string;
-  minute: number;
-  team: 'Mariners' | 'Opponent';
-};
-
-type Fixture = {
-  id: string;
-  opponent: string;
-  date: string;
-  time: string;
-  venue: string;
-  status: 'upcoming' | 'completed';
-  result?: {
-    marinersScore: number;
-    opponentScore: number;
-    goals: Goal[];
-  };
-};
-
-type Player = {
-  id: string;
-  name: string;
-  pos: string;
-  secondPos: string;
-  height: string;
-  imageUrl: string;
-};
-
-type StaffMember = {
-  id: string;
-  name: string;
-  role: string;
-  bio: string;
-  imageUrl: string;
-};
-
-// --- Initial Data ---
-
-const INITIAL_FIXTURES: Fixture[] = [
-  {
-    id: "1",
-    opponent: "Southern Anchors",
-    date: "2024-10-14",
-    time: "15:00",
-    venue: "Mariner Dome",
-    status: "completed",
-    result: {
-      marinersScore: 3,
-      opponentScore: 1,
-      goals: [
-        { id: "g1", player: "Leo Marino", minute: 12, team: "Mariners" },
-        { id: "g2", player: "Opponent", minute: 44, team: "Opponent" },
-        { id: "g3", player: "Elias Thorne", minute: 67, team: "Mariners" },
-        { id: "g4", player: "Elias Thorne", minute: 82, team: "Mariners" },
-      ]
-    }
-  },
-  {
-    id: "2",
-    opponent: "Northern Gulls",
-    date: "2024-10-21",
-    time: "18:00",
-    venue: "Gulls' Nest",
-    status: "upcoming"
-  }
-];
-
-const INITIAL_PLAYERS: Player[] = [
-  { 
-    id: "p1", 
-    name: "Leo Marino", 
-    pos: "Center Back", 
-    secondPos: "Right Back", 
-    height: "188cm", 
-    imageUrl: "https://picsum.photos/seed/player1/400/500" 
-  },
-  { 
-    id: "p2", 
-    name: "Elias Thorne", 
-    pos: "Striker", 
-    secondPos: "Left Winger", 
-    height: "182cm", 
-    imageUrl: "https://picsum.photos/seed/player2/400/500" 
-  },
-];
-
-const INITIAL_STAFF: StaffMember[] = [
-  { 
-    id: "s1", 
-    name: "Victor Helm", 
-    role: "Head Coach", 
-    bio: "A master tactician with 20 years of experience.",
-    imageUrl: "https://picsum.photos/seed/staff1/400/500"
-  },
-  { 
-    id: "s2", 
-    name: "Sarah Anchor", 
-    role: "Sporting Director", 
-    bio: "Leading the club's long-term vision and recruitment.",
-    imageUrl: "https://picsum.photos/seed/staff2/400/500"
-  },
-];
+type DashboardMode = "mock" | "live" | "schema-missing";
+type SupabaseClient = ReturnType<typeof createClient>;
+type FixtureRow = Database["public"]["Tables"]["fixtures"]["Row"];
+type GoalRow = Database["public"]["Tables"]["goals"]["Row"];
+type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
+type StaffRow = Database["public"]["Tables"]["staff"]["Row"];
+type FixtureWithGoals = FixtureRow & { goals: GoalRow[] | null };
 
 export default function AdminPage() {
-  const [view, setView] = useState<'fixtures' | 'players' | 'staff'>('fixtures');
-  
-  // Data States
+  const router = useRouter();
+  const supabaseConfigured = hasSupabaseEnv();
+  const supabaseRef = useRef<SupabaseClient | null>(null);
+
+  const [view, setView] = useState<"fixtures" | "players" | "staff">("fixtures");
   const [fixtures, setFixtures] = useState<Fixture[]>(INITIAL_FIXTURES);
   const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
   const [staff, setStaff] = useState<StaffMember[]>(INITIAL_STAFF);
+  const [mode, setMode] = useState<DashboardMode>(supabaseConfigured ? "live" : "mock");
+  const [isLoading, setIsLoading] = useState(supabaseConfigured);
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(
+    supabaseConfigured
+      ? "Connecting to Supabase..."
+      : "Supabase env vars are not set. The dashboard is running in local demo mode."
+  );
 
-  // Dialog States
   const [isAddFixtureOpen, setIsAddFixtureOpen] = useState(false);
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   const [isAddPlayerOpen, setIsAddPlayerOpen] = useState(false);
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
   const [selectedFixture, setSelectedFixture] = useState<Fixture | null>(null);
 
-  // Form States - Fixtures
   const [newOpponent, setNewOpponent] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [newVenue, setNewVenue] = useState("");
   const [mScore, setMScore] = useState(0);
   const [oScore, setOScore] = useState(0);
-  const [matchGoals, setMatchGoals] = useState<Omit<Goal, 'id'>[]>([]);
+  const [matchGoals, setMatchGoals] = useState<Omit<Goal, "id">[]>([]);
 
-  // Form States - Players
   const [pName, setPName] = useState("");
   const [pPos, setPPos] = useState("");
   const [pSecondPos, setPSecondPos] = useState("");
   const [pHeight, setPHeight] = useState("");
   const [pImageUrl, setPImageUrl] = useState("");
 
-  // Form States - Staff
   const [sName, setSName] = useState("");
   const [sRole, setSRole] = useState("");
   const [sBio, setSBio] = useState("");
   const [sImageUrl, setSImageUrl] = useState("");
 
-  // --- Handlers ---
-
-  const handleAddFixture = () => {
-    const fixture: Fixture = {
-      id: Math.random().toString(36).substr(2, 9),
-      opponent: newOpponent,
-      date: newDate,
-      time: newTime,
-      venue: newVenue,
-      status: 'upcoming'
-    };
-    setFixtures([...fixtures, fixture]);
-    setIsAddFixtureOpen(false);
-    setNewOpponent(""); setNewDate(""); setNewTime(""); setNewVenue("");
-  };
-
-  const handleSubmitResult = () => {
-    if (!selectedFixture) return;
-    setFixtures(fixtures.map(f => f.id === selectedFixture.id ? {
-      ...f,
-      status: 'completed',
-      result: {
-        marinersScore: mScore,
-        opponentScore: oScore,
-        goals: matchGoals.map(g => ({ ...g, id: Math.random().toString(36).substr(2, 5) }))
-      }
-    } : f));
-    setIsResultDialogOpen(false);
-  };
-
-  const handleAddPlayer = () => {
-    const player: Player = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: pName,
-      pos: pName ? pPos : "", // dummy logic to use variables
-      secondPos: pSecondPos,
-      height: pHeight,
-      imageUrl: pImageUrl || `https://picsum.photos/seed/p${Math.random()}/400/500`
-    };
-    setPlayers([...players, player]);
-    setIsAddPlayerOpen(false);
-    setPName(""); setPPos(""); setPSecondPos(""); setPHeight(""); setPImageUrl("");
-  };
-
-  const handleAddStaff = () => {
-    const member: StaffMember = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: sName,
-      role: sRole,
-      bio: sBio,
-      imageUrl: sImageUrl || `https://picsum.photos/seed/s${Math.random()}/400/500`
-    };
-    setStaff([...staff, member]);
-    setIsAddStaffOpen(false);
-    setSName(""); setSRole(""); setSBio(""); setSImageUrl("");
-  };
-
   const viewTitle = {
     fixtures: "Fixtures & Results",
     players: "First Team Squad",
-    staff: "Leadership & Staff"
+    staff: "Leadership & Staff",
   }[view];
+
+  useEffect(() => {
+    if (!supabaseConfigured) {
+      return;
+    }
+
+    // Create the Supabase client inside the effect, not during render
+    if (!supabaseRef.current) {
+      supabaseRef.current = createClient();
+    }
+
+    let mounted = true;
+
+    async function bootstrap() {
+      const supabase = supabaseRef.current;
+      if (!supabase) {
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+
+      await refreshFromSupabase(mounted);
+    }
+
+    bootstrap();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router, supabaseConfigured]);
+
+  async function refreshFromSupabase(mounted = true) {
+    const supabase = supabaseRef.current;
+    if (!supabase) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    const [fixturesResponse, playersResponse, staffResponse] = await Promise.all([
+      supabase
+        .from("fixtures")
+        .select(
+          "id, opponent, fixture_date, fixture_time, venue, status, mariners_score, opponent_score, created_at, updated_at, goals(id, fixture_id, player_name, minute, team, created_at)"
+        )
+        .order("fixture_date", { ascending: false }),
+      supabase.from("players").select("*").eq("is_active", true).order("name"),
+      supabase.from("staff").select("*").eq("is_active", true).order("name"),
+    ]);
+
+    if (!mounted) {
+      return;
+    }
+
+    const firstError =
+      fixturesResponse.error ?? playersResponse.error ?? staffResponse.error;
+
+    if (firstError) {
+      setMode("schema-missing");
+      setStatusMessage(
+        "Supabase is configured, but the required tables or policies are not ready yet. Run the SQL in docs/supabase/02-schema-and-rls.md."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const fixtureRows = (fixturesResponse.data ?? []) as FixtureWithGoals[];
+    const playerRows = (playersResponse.data ?? []) as PlayerRow[];
+    const staffRows = (staffResponse.data ?? []) as StaffRow[];
+
+    setFixtures(
+      fixtureRows.map((fixture) => mapFixtureRecord(fixture, fixture.goals ?? []))
+    );
+    setPlayers(playerRows.map(mapPlayerRecord));
+    setStaff(staffRows.map(mapStaffRecord));
+    setMode("live");
+    setStatusMessage("Connected to Supabase. Admin changes now persist.");
+    setIsLoading(false);
+  }
+
+  async function handleAddFixture() {
+    if (!newOpponent || !newDate || !newTime || !newVenue) {
+      setStatusMessage("Fill in opponent, date, time, and venue before saving.");
+      return;
+    }
+
+    if (mode !== "live" || !supabaseRef.current) {
+      const fixture: Fixture = {
+        id: Math.random().toString(36).slice(2, 11),
+        opponent: newOpponent,
+        date: newDate,
+        time: newTime,
+        venue: newVenue,
+        status: "upcoming",
+      };
+      setFixtures([fixture, ...fixtures]);
+      closeFixtureDialog();
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("fixtures").insert({
+      opponent: newOpponent,
+      fixture_date: newDate,
+      fixture_time: newTime,
+      venue: newVenue,
+      status: "upcoming",
+    });
+
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    closeFixtureDialog();
+    await refreshFromSupabase();
+  }
+
+  async function handleDeleteFixture(id: string) {
+    if (mode !== "live" || !supabaseRef.current) {
+      setFixtures(fixtures.filter((fixture) => fixture.id !== id));
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("fixtures").delete().eq("id", id);
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    await refreshFromSupabase();
+  }
+
+  async function handleSubmitResult() {
+    if (!selectedFixture) {
+      return;
+    }
+
+    if (mode !== "live" || !supabaseRef.current) {
+      setFixtures(
+        fixtures.map((fixture) =>
+          fixture.id === selectedFixture.id
+            ? {
+                ...fixture,
+                status: "completed",
+                result: {
+                  marinersScore: mScore,
+                  opponentScore: oScore,
+                  goals: matchGoals.map((goal) => ({
+                    ...goal,
+                    id: Math.random().toString(36).slice(2, 7),
+                  })),
+                },
+              }
+            : fixture
+        )
+      );
+      setIsResultDialogOpen(false);
+      return;
+    }
+
+    setIsSaving(true);
+
+    // Use the atomic RPC function to update fixture + replace goals in one call
+    const { error: rpcError } = await supabaseRef.current.rpc(
+      "submit_match_result",
+      {
+        p_fixture_id: selectedFixture.id,
+        p_mariners_score: mScore,
+        p_opponent_score: oScore,
+        p_goals: matchGoals.map((goal) => ({
+          player_name: goal.player,
+          minute: Number(goal.minute),
+          team: goal.team,
+        })),
+      }
+    );
+
+    if (rpcError) {
+      setIsSaving(false);
+      setStatusMessage(rpcError.message);
+      return;
+    }
+
+    setIsSaving(false);
+    setIsResultDialogOpen(false);
+    await refreshFromSupabase();
+  }
+
+  async function handleAddPlayer() {
+    if (!pName || !pPos) {
+      setStatusMessage("Player name and primary position are required.");
+      return;
+    }
+
+    if (mode !== "live" || !supabaseRef.current) {
+      const player: Player = {
+        id: Math.random().toString(36).slice(2, 11),
+        name: pName,
+        pos: pPos,
+        secondPos: pSecondPos,
+        height: pHeight,
+        imageUrl: pImageUrl || `https://picsum.photos/seed/p${Math.random()}/400/500`,
+      };
+      setPlayers([...players, player]);
+      closePlayerDialog();
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("players").insert({
+      name: pName,
+      pos: pPos,
+      second_pos: pSecondPos || null,
+      height: pHeight || null,
+      image_url: pImageUrl || null,
+      is_active: true,
+    });
+
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    closePlayerDialog();
+    await refreshFromSupabase();
+  }
+
+  async function handleDeletePlayer(id: string) {
+    if (mode !== "live" || !supabaseRef.current) {
+      setPlayers(players.filter((player) => player.id !== id));
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("players").delete().eq("id", id);
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    await refreshFromSupabase();
+  }
+
+  async function handleAddStaff() {
+    if (!sName || !sRole) {
+      setStatusMessage("Staff name and role are required.");
+      return;
+    }
+
+    if (mode !== "live" || !supabaseRef.current) {
+      const member: StaffMember = {
+        id: Math.random().toString(36).slice(2, 11),
+        name: sName,
+        role: sRole,
+        bio: sBio,
+        imageUrl: sImageUrl || `https://picsum.photos/seed/s${Math.random()}/400/500`,
+      };
+      setStaff([...staff, member]);
+      closeStaffDialog();
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("staff").insert({
+      name: sName,
+      role: sRole,
+      bio: sBio || null,
+      image_url: sImageUrl || null,
+      is_active: true,
+    });
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    closeStaffDialog();
+    await refreshFromSupabase();
+  }
+
+  async function handleDeleteStaff(id: string) {
+    if (mode !== "live" || !supabaseRef.current) {
+      setStaff(staff.filter((member) => member.id !== id));
+      return;
+    }
+
+    setIsSaving(true);
+    const { error } = await supabaseRef.current.from("staff").delete().eq("id", id);
+    setIsSaving(false);
+
+    if (error) {
+      setStatusMessage(error.message);
+      return;
+    }
+
+    await refreshFromSupabase();
+  }
+
+  async function handleSignOut() {
+    if (!supabaseRef.current) {
+      router.push("/");
+      return;
+    }
+
+    await supabaseRef.current.auth.signOut();
+    router.replace("/login");
+  }
+
+  function closeFixtureDialog() {
+    setIsAddFixtureOpen(false);
+    setNewOpponent("");
+    setNewDate("");
+    setNewTime("");
+    setNewVenue("");
+  }
+
+  function closePlayerDialog() {
+    setIsAddPlayerOpen(false);
+    setPName("");
+    setPPos("");
+    setPSecondPos("");
+    setPHeight("");
+    setPImageUrl("");
+  }
+
+  function closeStaffDialog() {
+    setIsAddStaffOpen(false);
+    setSName("");
+    setSRole("");
+    setSBio("");
+    setSImageUrl("");
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -278,21 +490,25 @@ export default function AdminPage() {
       <SidebarProvider>
         <div className="flex flex-1">
           <Sidebar collapsible="icon" className="border-r">
-            <SidebarHeader className="h-16 flex items-center px-4 border-b">
+            <SidebarHeader className="flex h-16 items-center border-b px-4">
               <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-5 w-5 text-accent" />
-                <span className="font-black tracking-tight group-data-[collapsible=icon]:hidden uppercase">EDITOR</span>
+                <span className="group-data-[collapsible=icon]:hidden font-black uppercase tracking-tight">
+                  Editor
+                </span>
               </div>
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>
-                <SidebarGroupLabel className="uppercase tracking-widest text-[10px]">Management</SidebarGroupLabel>
+                <SidebarGroupLabel className="uppercase tracking-widest text-[10px]">
+                  Management
+                </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        onClick={() => setView('fixtures')} 
-                        isActive={view === 'fixtures'}
+                      <SidebarMenuButton
+                        isActive={view === "fixtures"}
+                        onClick={() => setView("fixtures")}
                         tooltip="Fixtures"
                       >
                         <Calendar className="h-4 w-4" />
@@ -300,9 +516,9 @@ export default function AdminPage() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        onClick={() => setView('players')} 
-                        isActive={view === 'players'}
+                      <SidebarMenuButton
+                        isActive={view === "players"}
+                        onClick={() => setView("players")}
                         tooltip="Players"
                       >
                         <Users className="h-4 w-4" />
@@ -310,9 +526,9 @@ export default function AdminPage() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        onClick={() => setView('staff')} 
-                        isActive={view === 'staff'}
+                      <SidebarMenuButton
+                        isActive={view === "staff"}
+                        onClick={() => setView("staff")}
                         tooltip="Staff"
                       >
                         <ShieldCheck className="h-4 w-4" />
@@ -328,322 +544,621 @@ export default function AdminPage() {
           <SidebarInset className="flex-1 bg-background">
             <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
               <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <h1 className="text-sm sm:text-lg font-bold uppercase tracking-tight truncate">{viewTitle}</h1>
+              <Separator className="mr-2 h-4" orientation="vertical" />
+              <h1 className="truncate text-sm font-bold uppercase tracking-tight sm:text-lg">
+                {viewTitle}
+              </h1>
+              <div className="ml-auto flex items-center gap-2">
+                <Badge variant={mode === "live" ? "default" : "outline"}>
+                  {mode === "live" ? "Supabase Live" : "Demo Mode"}
+                </Badge>
+                {supabaseConfigured && (
+                  <Button onClick={handleSignOut} size="sm" variant="outline">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                )}
+              </div>
             </header>
-            
-            <main className="p-4 md:p-8">
-              {/* --- Fixtures View --- */}
-              {view === 'fixtures' && (
-                <div className="space-y-8">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h2 className="text-2xl sm:text-3xl font-black uppercase">MATCH CENTER</h2>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Manage the Mariner match schedule.</p>
-                    </div>
-                    <Dialog open={isAddFixtureOpen} onOpenChange={setIsAddFixtureOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
-                          <Plus className="h-4 w-4 mr-2" /> ADD FIXTURE
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                          <DialogTitle>Add New Fixture</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2"><Label>Opponent</Label><Input value={newOpponent} onChange={e => setNewOpponent(e.target.value)} /></div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2"><Label>Date</Label><Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} /></div>
-                            <div className="grid gap-2"><Label>Time</Label><Input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} /></div>
-                          </div>
-                          <div className="grid gap-2"><Label>Venue</Label><Input value={newVenue} onChange={e => setNewVenue(e.target.value)} /></div>
-                        </div>
-                        <DialogFooter><Button onClick={handleAddFixture} className="w-full font-bold">CREATE FIXTURE</Button></DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
 
-                  <Tabs defaultValue="upcoming" className="w-full">
-                    <TabsList className="mb-6 grid w-full grid-cols-2 max-w-[400px]">
-                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                      <TabsTrigger value="completed">Results</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="upcoming">
+            <main className="p-4 md:p-8">
+              {statusMessage && (
+                <Alert
+                  className={
+                    mode === "schema-missing"
+                      ? "mb-6 border-amber-500/30 bg-amber-500/10"
+                      : "mb-6 border-accent/20 bg-card/50"
+                  }
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>
+                    {mode === "live"
+                      ? "Supabase Connected"
+                      : mode === "schema-missing"
+                        ? "Schema Still Missing"
+                        : "Using Template Demo Data"}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {statusMessage}{" "}
+                    {(mode === "mock" || mode === "schema-missing") && (
+                      <Link className="font-semibold text-accent hover:underline" href="/docs/supabase">
+                        Open the setup guide
+                      </Link>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isLoading ? (
+                <Card className="border-accent/20 bg-card/60">
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    Loading team data from Supabase...
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {view === "fixtures" && (
+                    <div className="space-y-8">
+                      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                        <div>
+                          <h2 className="text-2xl font-black uppercase sm:text-3xl">
+                            Match Center
+                          </h2>
+                          <p className="text-xs text-muted-foreground sm:text-sm">
+                            Manage fixtures, results, and scorers.
+                          </p>
+                        </div>
+                        <Dialog onOpenChange={setIsAddFixtureOpen} open={isAddFixtureOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Fixture
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                              <DialogTitle>Add New Fixture</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label>Opponent</Label>
+                                <Input
+                                  onChange={(event) => setNewOpponent(event.target.value)}
+                                  value={newOpponent}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                  <Label>Date</Label>
+                                  <Input
+                                    onChange={(event) => setNewDate(event.target.value)}
+                                    type="date"
+                                    value={newDate}
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Time</Label>
+                                  <Input
+                                    onChange={(event) => setNewTime(event.target.value)}
+                                    type="time"
+                                    value={newTime}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid gap-2">
+                                <Label>Venue</Label>
+                                <Input
+                                  onChange={(event) => setNewVenue(event.target.value)}
+                                  value={newVenue}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button className="w-full font-bold" disabled={isSaving} onClick={handleAddFixture}>
+                                {isSaving ? "Saving..." : "Create Fixture"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+
+                      <Tabs className="w-full" defaultValue="upcoming">
+                        <TabsList className="mb-6 grid w-full max-w-[400px] grid-cols-2">
+                          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                          <TabsTrigger value="completed">Results</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="upcoming">
+                          <Card className="overflow-hidden">
+                            <CardContent className="p-0">
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Opponent</TableHead>
+                                      <TableHead className="hidden sm:table-cell">
+                                        DateTime
+                                      </TableHead>
+                                      <TableHead className="hidden md:table-cell">
+                                        Venue
+                                      </TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {fixtures
+                                      .filter((fixture) => fixture.status === "upcoming")
+                                      .map((fixture) => (
+                                        <TableRow key={fixture.id}>
+                                          <TableCell>
+                                            <div className="font-bold">{fixture.opponent}</div>
+                                            <div className="text-xs text-muted-foreground sm:hidden">
+                                              {fixture.date} • {fixture.time}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="hidden text-sm sm:table-cell">
+                                            {fixture.date} at {fixture.time}
+                                          </TableCell>
+                                          <TableCell className="hidden text-sm md:table-cell">
+                                            {fixture.venue}
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                              <Button
+                                                className="h-8 text-xs"
+                                                onClick={() => {
+                                                  setSelectedFixture(fixture);
+                                                  setMScore(fixture.result?.marinersScore ?? 0);
+                                                  setOScore(fixture.result?.opponentScore ?? 0);
+                                                  setMatchGoals(
+                                                    fixture.result?.goals.map((goal) => ({
+                                                      player: goal.player,
+                                                      minute: goal.minute,
+                                                      team: goal.team,
+                                                    })) ?? []
+                                                  );
+                                                  setIsResultDialogOpen(true);
+                                                }}
+                                                size="sm"
+                                                variant="outline"
+                                              >
+                                                Result
+                                              </Button>
+                                              <Button
+                                                className="h-8 w-8 text-destructive"
+                                                onClick={() => handleDeleteFixture(fixture.id)}
+                                                size="icon"
+                                                variant="ghost"
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    {fixtures.filter((fixture) => fixture.status === "upcoming").length === 0 && (
+                                      <TableRow>
+                                        <TableCell className="py-12 text-center text-muted-foreground italic" colSpan={4}>
+                                          No upcoming fixtures scheduled.
+                                        </TableCell>
+                                      </TableRow>
+                                    )}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+                        <TabsContent value="completed">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {fixtures
+                              .filter((fixture) => fixture.status === "completed")
+                              .map((fixture) => (
+                                <Card className="border-accent/20 bg-card/50 p-5" key={fixture.id}>
+                                  <div className="mb-4 flex items-start justify-between">
+                                    <div>
+                                      <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-accent">
+                                        {fixture.date}
+                                      </p>
+                                      <h3 className="text-base font-bold uppercase tracking-tight">
+                                        Mariners{" "}
+                                        <span className="mx-1 text-accent">
+                                          {fixture.result?.marinersScore} - {fixture.result?.opponentScore}
+                                        </span>{" "}
+                                        {fixture.opponent}
+                                      </h3>
+                                    </div>
+                                    <Button
+                                      className="-mr-2 -mt-2 h-8 w-8 text-destructive"
+                                      onClick={() => handleDeleteFixture(fixture.id)}
+                                      size="icon"
+                                      variant="ghost"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  <div className="space-y-2 border-t pt-3">
+                                    {fixture.result?.goals.map((goal) => (
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground" key={goal.id}>
+                                        <Trophy className="h-3 w-3 shrink-0 text-accent" />
+                                        <span className="truncate">
+                                          {goal.player} ({goal.minute}') - {goal.team}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </Card>
+                              ))}
+                            {fixtures.filter((fixture) => fixture.status === "completed").length === 0 && (
+                              <div className="col-span-full rounded-xl border-2 border-dashed py-12 text-center italic text-muted-foreground">
+                                No match results recorded yet.
+                              </div>
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  )}
+
+                  {view === "players" && (
+                    <div className="space-y-8">
+                      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                        <div>
+                          <h2 className="text-2xl font-black uppercase sm:text-3xl">Roster</h2>
+                          <p className="text-xs text-muted-foreground sm:text-sm">
+                            Maintain the official player roster.
+                          </p>
+                        </div>
+                        <Dialog onOpenChange={setIsAddPlayerOpen} open={isAddPlayerOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Player
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                              <DialogTitle>Add New Player</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label>Name</Label>
+                                <Input onChange={(event) => setPName(event.target.value)} value={pName} />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                  <Label>Position</Label>
+                                  <Input onChange={(event) => setPPos(event.target.value)} value={pPos} />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Second Position</Label>
+                                  <Input
+                                    onChange={(event) => setPSecondPos(event.target.value)}
+                                    value={pSecondPos}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                  <Label>Height</Label>
+                                  <Input
+                                    onChange={(event) => setPHeight(event.target.value)}
+                                    value={pHeight}
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label>Image URL</Label>
+                                  <Input
+                                    onChange={(event) => setPImageUrl(event.target.value)}
+                                    placeholder="https://..."
+                                    value={pImageUrl}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button className="w-full font-bold" disabled={isSaving} onClick={handleAddPlayer}>
+                                {isSaving ? "Saving..." : "Save Player"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+
                       <Card className="overflow-hidden">
                         <CardContent className="p-0">
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Opponent</TableHead>
-                                  <TableHead className="hidden sm:table-cell">DateTime</TableHead>
-                                  <TableHead className="hidden md:table-cell">Venue</TableHead>
+                                  <TableHead className="w-[60px]">Img</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead className="hidden sm:table-cell">Position</TableHead>
+                                  <TableHead className="hidden md:table-cell">Height</TableHead>
                                   <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {fixtures.filter(f => f.status === 'upcoming').map(f => (
-                                  <TableRow key={f.id}>
+                                {players.map((player) => (
+                                  <TableRow key={player.id}>
                                     <TableCell>
-                                      <div className="font-bold">{f.opponent}</div>
-                                      <div className="sm:hidden text-xs text-muted-foreground">{f.date} • {f.time}</div>
-                                    </TableCell>
-                                    <TableCell className="hidden sm:table-cell text-sm">{f.date} at {f.time}</TableCell>
-                                    <TableCell className="hidden md:table-cell text-sm">{f.venue}</TableCell>
-                                    <TableCell className="text-right">
-                                      <div className="flex justify-end gap-2">
-                                        <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => { setSelectedFixture(f); setMatchGoals([]); setIsResultDialogOpen(true); }}>RESULT</Button>
-                                        <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                                      <div className="relative h-10 w-10 overflow-hidden rounded-full border border-accent/20 bg-muted">
+                                        <Image
+                                          alt={player.name}
+                                          className="object-cover"
+                                          fill
+                                          sizes="40px"
+                                          src={player.imageUrl || "https://picsum.photos/seed/player-fallback/400/500"}
+                                        />
                                       </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-bold">{player.name}</div>
+                                      <div className="sm:hidden">
+                                        <Badge className="px-1.5 py-0" variant="outline">
+                                          {player.pos}
+                                        </Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                      <Badge variant="outline">{player.pos}</Badge>
+                                    </TableCell>
+                                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                                      {player.height}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <Button
+                                        className="h-8 w-8 text-destructive"
+                                        onClick={() => handleDeletePlayer(player.id)}
+                                        size="icon"
+                                        variant="ghost"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </TableCell>
                                   </TableRow>
                                 ))}
-                                {fixtures.filter(f => f.status === 'upcoming').length === 0 && (
-                                  <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">No upcoming fixtures scheduled.</TableCell></TableRow>
-                                )}
                               </TableBody>
                             </Table>
                           </div>
                         </CardContent>
                       </Card>
-                    </TabsContent>
-                    <TabsContent value="completed">
-                      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                        {fixtures.filter(f => f.status === 'completed').map(f => (
-                          <Card key={f.id} className="p-5 border-accent/20 bg-card/50">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <p className="text-[10px] text-accent font-black uppercase tracking-widest mb-1">{f.date}</p>
-                                <h3 className="text-base font-bold uppercase tracking-tight">MARINERS <span className="text-accent mx-1">{f.result?.marinersScore} - {f.result?.opponentScore}</span> {f.opponent}</h3>
+                    </div>
+                  )}
+
+                  {view === "staff" && (
+                    <div className="space-y-8">
+                      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                        <div>
+                          <h2 className="text-2xl font-black uppercase sm:text-3xl">Staff</h2>
+                          <p className="text-xs text-muted-foreground sm:text-sm">
+                            Manage coaching and administrative roles.
+                          </p>
+                        </div>
+                        <Dialog onOpenChange={setIsAddStaffOpen} open={isAddStaffOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Staff Member
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Add Staff Member</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label>Name</Label>
+                                <Input onChange={(event) => setSName(event.target.value)} value={sName} />
                               </div>
-                              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8 -mt-2 -mr-2" onClick={() => setFixtures(fixtures.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+                              <div className="grid gap-2">
+                                <Label>Role</Label>
+                                <Input onChange={(event) => setSRole(event.target.value)} value={sRole} />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label>Image URL</Label>
+                                <Input
+                                  onChange={(event) => setSImageUrl(event.target.value)}
+                                  placeholder="https://..."
+                                  value={sImageUrl}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label>Bio</Label>
+                                <Textarea onChange={(event) => setSBio(event.target.value)} value={sBio} />
+                              </div>
                             </div>
-                            <div className="space-y-2 border-t pt-3">
-                              {f.result?.goals.map((g, idx) => (
-                                <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Trophy className="h-3 w-3 text-accent shrink-0" />
-                                  <span className="truncate">{g.player} ({g.minute}') - {g.team}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </Card>
-                        ))}
-                        {fixtures.filter(f => f.status === 'completed').length === 0 && (
-                          <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-xl">No match results recorded yet.</div>
-                        )}
+                            <DialogFooter>
+                              <Button className="w-full font-bold" disabled={isSaving} onClick={handleAddStaff}>
+                                {isSaving ? "Saving..." : "Save Member"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              )}
 
-              {/* --- Players View --- */}
-              {view === 'players' && (
-                <div className="space-y-8">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h2 className="text-2xl sm:text-3xl font-black uppercase">ROSTER</h2>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Maintain the official player roster.</p>
+                      <Card className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-[60px]">Img</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Role</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {staff.map((member) => (
+                                  <TableRow key={member.id}>
+                                    <TableCell>
+                                      <div className="relative h-10 w-10 overflow-hidden rounded-full border border-accent/20 bg-muted">
+                                        <Image
+                                          alt={member.name}
+                                          className="object-cover"
+                                          fill
+                                          sizes="40px"
+                                          src={member.imageUrl || "https://picsum.photos/seed/staff-fallback/400/500"}
+                                        />
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="font-bold">{member.name}</TableCell>
+                                    <TableCell className="text-xs font-semibold uppercase tracking-wider text-accent sm:text-sm">
+                                      {member.role}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <Button
+                                        className="h-8 w-8 text-destructive"
+                                        onClick={() => handleDeleteStaff(member.id)}
+                                        size="icon"
+                                        variant="ghost"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                    <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
-                          <Plus className="h-4 w-4 mr-2" /> ADD PLAYER
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader><DialogTitle>Add New Player</DialogTitle></DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label>Name</Label>
-                            <Input placeholder="Full Name" value={pName} onChange={e => setPName(e.target.value)} />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                              <Label>Position</Label>
-                              <Input placeholder="Primary Pos" value={pPos} onChange={e => setPPos(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label>Second Position</Label>
-                              <Input placeholder="Secondary Pos" value={pSecondPos} onChange={e => setPSecondPos(e.target.value)} />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                              <Label>Height</Label>
-                              <Input placeholder="e.g. 185cm" value={pHeight} onChange={e => setPHeight(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label>Image URL</Label>
-                              <Input placeholder="https://..." value={pImageUrl} onChange={e => setPImageUrl(e.target.value)} />
-                            </div>
-                          </div>
-                        </div>
-                        <DialogFooter><Button onClick={handleAddPlayer} className="w-full font-bold">SAVE PLAYER</Button></DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[60px]">Img</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead className="hidden sm:table-cell">Position</TableHead>
-                              <TableHead className="hidden md:table-cell">Height</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {players.map(p => (
-                              <TableRow key={p.id}>
-                                <TableCell>
-                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted border border-accent/20">
-                                    <Image 
-                                      src={p.imageUrl} 
-                                      alt={p.name} 
-                                      fill 
-                                      className="object-cover"
-                                      sizes="40px"
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-bold">{p.name}</div>
-                                  <div className="sm:hidden text-[10px]"><Badge variant="outline" className="px-1.5 py-0">{p.pos}</Badge></div>
-                                </TableCell>
-                                <TableCell className="hidden sm:table-cell"><Badge variant="outline">{p.pos}</Badge></TableCell>
-                                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{p.height}</TableCell>
-                                <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setPlayers(players.filter(x => x.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* --- Staff View --- */}
-              {view === 'staff' && (
-                <div className="space-y-8">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h2 className="text-2xl sm:text-3xl font-black uppercase">STAFF</h2>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Manage coaching and administrative roles.</p>
-                    </div>
-                    <Dialog open={isAddStaffOpen} onOpenChange={setIsAddStaffOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-bold">
-                          <Plus className="h-4 w-4 mr-2" /> ADD STAFF MEMBER
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader><DialogTitle>Add Staff Member</DialogTitle></DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2"><Label>Name</Label><Input value={sName} onChange={e => setSName(e.target.value)} /></div>
-                          <div className="grid gap-2"><Label>Role</Label><Input value={sRole} onChange={e => setSRole(e.target.value)} /></div>
-                          <div className="grid gap-2"><Label>Image URL</Label><Input placeholder="https://..." value={sImageUrl} onChange={e => setSImageUrl(e.target.value)} /></div>
-                          <div className="grid gap-2"><Label>Bio</Label><Textarea value={sBio} onChange={e => setSBio(e.target.value)} /></div>
-                        </div>
-                        <DialogFooter><Button onClick={handleAddStaff} className="w-full font-bold">SAVE MEMBER</Button></DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[60px]">Img</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Role</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {staff.map(s => (
-                              <TableRow key={s.id}>
-                                <TableCell>
-                                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-muted border border-accent/20">
-                                    <Image 
-                                      src={s.imageUrl} 
-                                      alt={s.name} 
-                                      fill 
-                                      className="object-cover"
-                                      sizes="40px"
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-bold">{s.name}</TableCell>
-                                <TableCell className="text-accent text-xs sm:text-sm font-semibold uppercase tracking-wider">{s.role}</TableCell>
-                                <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => setStaff(staff.filter(x => x.id !== s.id))}><Trash2 className="h-4 w-4" /></Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                  )}
+                </>
               )}
             </main>
           </SidebarInset>
         </div>
       </SidebarProvider>
 
-      {/* Shared Result Dialog */}
-      <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
-        <DialogContent className="w-[95%] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Enter Match Result</DialogTitle></DialogHeader>
+      <Dialog onOpenChange={setIsResultDialogOpen} open={isResultDialogOpen}>
+        <DialogContent className="max-h-[90vh] w-[95%] overflow-y-auto sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Enter Match Result</DialogTitle>
+          </DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-4 sm:gap-8 p-4 bg-muted/30 rounded-lg text-center">
-              <div><Label className="text-accent font-bold text-[10px] sm:text-xs">MARINERS</Label><Input type="number" value={mScore} onChange={e => setMScore(parseInt(e.target.value))} className="text-center text-xl sm:text-3xl font-black mt-1" /></div>
-              <div><Label className="font-bold text-[10px] sm:text-xs uppercase">{selectedFixture?.opponent || "OPPONENT"}</Label><Input type="number" value={oScore} onChange={e => setOScore(parseInt(e.target.value))} className="text-center text-xl sm:text-3xl font-black mt-1" /></div>
+            <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted/30 p-4 text-center sm:gap-8">
+              <div>
+                <Label className="text-[10px] font-bold text-accent sm:text-xs">MARINERS</Label>
+                <Input
+                  className="mt-1 text-center text-xl font-black sm:text-3xl"
+                  onChange={(event) => setMScore(Number(event.target.value))}
+                  type="number"
+                  value={mScore}
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] font-bold uppercase sm:text-xs">
+                  {selectedFixture?.opponent || "OPPONENT"}
+                </Label>
+                <Input
+                  className="mt-1 text-center text-xl font-black sm:text-3xl"
+                  onChange={(event) => setOScore(Number(event.target.value))}
+                  type="number"
+                  value={oScore}
+                />
+              </div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between"><h4 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">GOALSCORERS</h4><Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])}>ADD GOAL</Button></div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                {matchGoals.map((g, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row gap-2 p-3 bg-muted/20 rounded-md border border-accent/10">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest sm:text-xs">
+                  Goalscorers
+                </h4>
+                <Button
+                  className="h-7 text-xs"
+                  onClick={() =>
+                    setMatchGoals([...matchGoals, { player: "", minute: 0, team: "Mariners" }])
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  Add Goal
+                </Button>
+              </div>
+              <div className="max-h-[300px] space-y-3 overflow-y-auto pr-2">
+                {matchGoals.map((goal, index) => (
+                  <div
+                    className="flex flex-col gap-2 rounded-md border border-accent/10 bg-muted/20 p-3 sm:flex-row"
+                    key={`${goal.player}-${index}`}
+                  >
                     <div className="flex-1 space-y-1">
                       <Label className="text-[9px] uppercase text-muted-foreground">Player</Label>
-                      <Input placeholder="Player Name" value={g.player} onChange={e => { const u = [...matchGoals]; u[i].player = e.target.value; setMatchGoals(u); }} className="h-8 text-sm" />
+                      <Input
+                        className="h-8 text-sm"
+                        onChange={(event) => {
+                          const updatedGoals = [...matchGoals];
+                          updatedGoals[index].player = event.target.value;
+                          setMatchGoals(updatedGoals);
+                        }}
+                        placeholder="Player Name"
+                        value={goal.player}
+                      />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 shrink-0 sm:w-24">
+                    <div className="grid shrink-0 grid-cols-2 gap-2 sm:w-24 sm:grid-cols-1">
                       <div className="space-y-1">
                         <Label className="text-[9px] uppercase text-muted-foreground">Min</Label>
-                        <Input type="number" placeholder="Min" value={g.minute} onChange={e => { const u = [...matchGoals]; u[i].minute = parseInt(e.target.value); setMatchGoals(u); }} className="h-8 text-sm" />
+                        <Input
+                          className="h-8 text-sm"
+                          onChange={(event) => {
+                            const updatedGoals = [...matchGoals];
+                            updatedGoals[index].minute = Number(event.target.value);
+                            setMatchGoals(updatedGoals);
+                          }}
+                          type="number"
+                          value={goal.minute}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[9px] uppercase text-muted-foreground">Team</Label>
-                        <select className="h-8 w-full border rounded px-2 text-xs bg-background" value={g.team} onChange={e => { const u = [...matchGoals]; u[i].team = e.target.value as any; setMatchGoals(u); }}>
+                        <select
+                          className="h-8 w-full rounded border bg-background px-2 text-xs"
+                          onChange={(event) => {
+                            const updatedGoals = [...matchGoals];
+                            updatedGoals[index].team = event.target.value as Goal["team"];
+                            setMatchGoals(updatedGoals);
+                          }}
+                          value={goal.team}
+                        >
                           <option value="Mariners">Mariners</option>
                           <option value="Opponent">Opponent</option>
                         </select>
                       </div>
                     </div>
                     <div className="flex items-end">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setMatchGoals(matchGoals.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+                      <Button
+                        className="h-8 w-8 shrink-0 text-destructive"
+                        onClick={() =>
+                          setMatchGoals(matchGoals.filter((_, goalIndex) => goalIndex !== index))
+                        }
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
-                {matchGoals.length === 0 && <p className="text-center text-[10px] text-muted-foreground italic py-4">No goals added for this match.</p>}
+                {matchGoals.length === 0 && (
+                  <p className="py-4 text-center text-[10px] italic text-muted-foreground">
+                    No goals added for this match.
+                  </p>
+                )}
               </div>
             </div>
           </div>
-          <DialogFooter><Button onClick={handleSubmitResult} className="w-full bg-accent text-accent-foreground font-black h-12">RECORD FINAL RESULT</Button></DialogFooter>
+          <DialogFooter>
+            <Button
+              className="h-12 w-full bg-accent font-black text-accent-foreground"
+              disabled={isSaving}
+              onClick={handleSubmitResult}
+            >
+              {isSaving ? "Saving..." : "Record Final Result"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Footer />
     </div>
   );

@@ -41,10 +41,11 @@ export function Footer() {
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">The Club</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link href="/fixtures" className="hover:text-accent">Fixtures & Results</Link></li>
               <li><Link href="/players" className="hover:text-accent">First Team</Link></li>
               <li><Link href="/staff" className="hover:text-accent">Management</Link></li>
               <li><Link href="/partnership" className="hover:text-accent">Partners</Link></li>
-              <li><Link href="/admin" className="hover:text-accent">Editor Dashboard</Link></li>
+              <li><Link href="/dashboard" className="hover:text-accent">Dashboard</Link></li>
             </ul>
           </div>
           <div>
