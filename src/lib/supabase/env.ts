@@ -1,10 +1,5 @@
-const publicEnvKeys = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-] as const;
-
 export function hasSupabaseEnv() {
-  return publicEnvKeys.every((key) => Boolean(process.env[key]));
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
 export function getSupabasePublicEnv() {

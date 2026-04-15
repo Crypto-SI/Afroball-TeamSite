@@ -465,6 +465,7 @@ export default function DashboardPage() {
                       setStatusMessage={setStatusMessage}
                       setProfiles={setProfiles}
                       supabaseRef={supabaseRef}
+                      onRefresh={() => refreshFromSupabase()}
                     />
                   )}
                   {activeSection === "purchases" && (

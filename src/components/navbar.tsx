@@ -1,12 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { Anchor, CalendarDays, Menu, X, ShoppingBag, Ticket, Users, Phone, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Anchor, CalendarDays, Menu, X, ShoppingBag, Ticket, Users, Phone, ShieldCheck, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { useAuthState } from "@/hooks/use-auth-state";
 
 export function Navbar() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const isLoggedIn = useAuthState();
+
+  async function handleLogout() {
+    if (!hasSupabaseEnv()) return;
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setIsOpen(false);
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  }
 
   const navItems = [
     { name: "Players", href: "/players", icon: Users },
@@ -43,6 +61,17 @@ export function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              {isLoggedIn && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  <LogOut className="mr-1.5 h-4 w-4" />
+                  Logout
+                </Button>
+              )}
             </div>
           </div>
 
@@ -75,6 +104,15 @@ export function Navbar() {
                 <span>{item.name}</span>
               </Link>
             ))}
+            {isLoggedIn && (
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center space-x-3 rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
+              </button>
+            )}
           </div>
         </div>
       )}
