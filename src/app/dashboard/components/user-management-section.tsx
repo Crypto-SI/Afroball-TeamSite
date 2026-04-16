@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, ShieldCheck, UserCog, X } from "lucide-react";
+import { Loader2, Plus, UserCog } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
 import type { Database } from "@/types/database";
 import { ROLE_LABELS, type UserRole } from "@/lib/dashboard-config";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { getMutationErrorMessage, updateUserRole } from "../dashboard-mutations";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -76,23 +77,29 @@ export function UserManagementSection({
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current
-      .from("profiles")
-      .update({ role: newRole as Database["public"]["Tables"]["profiles"]["Update"]["role"] })
-      .eq("id", userId);
-    setIsSaving(false);
+    try {
+      const { error } = await updateUserRole(
+        supabaseRef.current,
+        userId,
+        newRole as ProfileRow["role"]
+      );
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      setProfiles(
+        profiles.map((p) =>
+          p.id === userId ? { ...p, role: newRole as ProfileRow["role"] } : p
+        )
+      );
+      setStatusMessage(`User role updated to ${newRole}.`);
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    setProfiles(
-      profiles.map((p) =>
-        p.id === userId ? { ...p, role: newRole as ProfileRow["role"] } : p
-      )
-    );
-    setStatusMessage(`User role updated to ${newRole}.`);
   }
 
   // ── Create User Handler ───────────────────────────────────────────────────
@@ -112,7 +119,20 @@ export function UserManagementSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
-      setCreateError("User creation requires a live Supabase connection.");
+      const profile: ProfileRow = {
+        id: createDemoId("user"),
+        full_name: newFullName.trim() || newEmail.trim(),
+        role: newRole,
+        created_at: new Date().toISOString(),
+      };
+      setProfiles([profile, ...profiles]);
+      setStatusMessage(`User ${newEmail.trim()} created locally in demo mode.`);
+      setNewEmail("");
+      setNewPassword("");
+      setNewFullName("");
+      setNewRole("fan");
+      setCreateError(null);
+      setDialogOpen(false);
       return;
     }
 
@@ -219,7 +239,7 @@ export function UserManagementSection({
           }}
         >
           <DialogTrigger asChild>
-            <Button disabled={mode !== "live"} className="gap-2">
+            <Button className="gap-2">
               <Plus className="h-4 w-4" />
               Create User
             </Button>
@@ -389,4 +409,8 @@ export function UserManagementSection({
       </Card>
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }

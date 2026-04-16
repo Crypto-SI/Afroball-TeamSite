@@ -26,6 +26,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { StaffMember } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { createStaff, deleteStaff, getMutationErrorMessage } from "../dashboard-mutations";
+import { DashboardSectionHeader } from "./dashboard-section-ui";
 
 type Props = {
   staff: StaffMember[];
@@ -34,6 +36,7 @@ type Props = {
   isSaving: boolean;
   setIsSaving: (v: boolean) => void;
   setStatusMessage: (m: string | null) => void;
+  setStaff: (staff: StaffMember[]) => void;
   onRefresh: () => Promise<void>;
   supabaseRef: React.MutableRefObject<SupabaseClient | null>;
 };
@@ -45,6 +48,7 @@ export function StaffSection({
   isSaving,
   setIsSaving,
   setStatusMessage,
+  setStaff,
   onRefresh,
   supabaseRef,
 }: Props) {
@@ -61,45 +65,63 @@ export function StaffSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      const member: StaffMember = {
+        id: createDemoId("staff"),
+        name: sName,
+        role: sRole,
+        bio: sBio,
+        imageUrl: sImageUrl || "https://picsum.photos/seed/staff-demo/400/500",
+      };
+      setStaff([...staff, member]);
       setStatusMessage("Staff member added (demo mode).");
       closeDialog();
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("staff").insert({
-      name: sName,
-      role: sRole,
-      bio: sBio || null,
-      image_url: sImageUrl || null,
-      is_active: true,
-    });
-    setIsSaving(false);
+    try {
+      const { error } = await createStaff(supabaseRef.current, {
+        name: sName,
+        role: sRole,
+        bio: sBio,
+        imageUrl: sImageUrl,
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      closeDialog();
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    closeDialog();
-    await onRefresh();
   }
 
   async function handleDelete(id: string) {
     if (mode !== "live" || !supabaseRef.current) {
+      setStaff(staff.filter((member) => member.id !== id));
       setStatusMessage("Staff member removed (demo mode).");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("staff").delete().eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await deleteStaff(supabaseRef.current, id);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    await onRefresh();
   }
 
   function closeDialog() {
@@ -112,14 +134,11 @@ export function StaffSection({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-black uppercase sm:text-3xl">Staff</h2>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            {canCrud ? "Manage coaching and administrative roles." : "View coaching and administrative staff."}
-          </p>
-        </div>
-        {canCrud && (
+      <DashboardSectionHeader
+        title="Staff"
+        description={canCrud ? "Manage coaching and administrative roles." : "View coaching and administrative staff."}
+        action={
+          canCrud ? (
           <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
             <DialogTrigger asChild>
               <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
@@ -156,8 +175,9 @@ export function StaffSection({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       <Card className="overflow-hidden">
         <CardContent className="p-0">
@@ -210,4 +230,8 @@ export function StaffSection({
       </Card>
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }

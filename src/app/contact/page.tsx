@@ -5,8 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { getSiteSettings } from "@/lib/team-data-loaders";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getSiteSettings();
+  const clubName = settings.club_name || "Toman Mariners FC";
+  const contactEmail = settings.contact_email || "contact@tomanmariners.com";
+  const contactPhone = settings.contact_phone || "+1 (555) MARINER";
+  const stadiumName = settings.stadium_name || "Mariner Dome";
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -15,7 +22,7 @@ export default function ContactPage() {
           <div className="max-w-4xl mx-auto mb-12 md:mb-16 text-center">
             <h1 className="text-3xl font-black tracking-tight sm:text-6xl mb-4">CONTACT US</h1>
             <p className="text-muted-foreground text-base sm:text-lg">
-              Have a question about tickets, merch, or trials? We're here to help the Mariners family.
+              Have a question about tickets, merch, or trials? We&apos;re here to help the {clubName} family.
             </p>
           </div>
 
@@ -60,7 +67,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-bold">Email Us</p>
-                    <p className="text-sm sm:text-base text-muted-foreground">General: hello@tomanmariners.com</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">General: {contactEmail}</p>
                     <p className="text-sm sm:text-base text-muted-foreground">Press: media@tomanmariners.com</p>
                   </div>
                 </div>
@@ -71,7 +78,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-bold">Call Us</p>
-                    <p className="text-sm sm:text-base text-muted-foreground">+1 (555) MARINER</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{contactPhone}</p>
                     <p className="text-xs sm:text-sm text-muted-foreground italic">Mon-Fri, 9am - 5pm</p>
                   </div>
                 </div>
@@ -82,7 +89,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-bold">Visit Us</p>
-                    <p className="text-sm sm:text-base text-muted-foreground">Mariner Dome Stadium Office</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{stadiumName} Stadium Office</p>
                     <p className="text-sm sm:text-base text-muted-foreground">Port City, PC 10405</p>
                   </div>
                 </div>
@@ -96,7 +103,7 @@ export default function ContactPage() {
           </div>
         </div>
       </main>
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { generateMatchSummary } from "@/ai/flows/automated-match-summaries";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,15 +12,31 @@ interface AIMatchInsightProps {
 
 export function AIMatchInsight({ context, title }: AIMatchInsightProps) {
   const [summary, setSummary] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
+    setErrorMessage(null);
+
     try {
-      const result = await generateMatchSummary({ context });
+      const response = await fetch("/api/match-summary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ context }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to generate summary.");
+      }
+
       setSummary(result.summary);
     } catch (error) {
       console.error("Failed to generate summary", error);
+      setErrorMessage("Insight generation is unavailable right now.");
     } finally {
       setLoading(false);
     }
@@ -57,6 +72,9 @@ export function AIMatchInsight({ context, title }: AIMatchInsightProps) {
             Tap the button to get an AI-powered summary of {title}.
           </p>
         )}
+        {errorMessage ? (
+          <p className="mt-3 text-xs font-medium text-destructive">{errorMessage}</p>
+        ) : null}
       </CardContent>
     </Card>
   );

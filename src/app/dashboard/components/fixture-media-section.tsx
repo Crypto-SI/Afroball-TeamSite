@@ -25,6 +25,7 @@ import {
 import type { Fixture } from "@/lib/team-site-data";
 import type { Database } from "@/types/database";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { createFixtureMedia, deleteFixtureMedia, getMutationErrorMessage } from "../dashboard-mutations";
 
 type FixtureMediaRow = Database["public"]["Tables"]["fixture_media"]["Row"];
 
@@ -67,31 +68,44 @@ export function FixtureMediaSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      setMedia([
+        {
+          id: createDemoId("media"),
+          fixture_id: fixtureId,
+          video_url: videoUrl,
+          title: title || null,
+          created_by: null,
+          created_at: new Date().toISOString(),
+        },
+        ...media,
+      ]);
       setStatusMessage("Media added (demo mode).");
       closeDialog();
       return;
     }
 
     setIsSaving(true);
-    const { data, error } = await supabaseRef.current
-      .from("fixture_media")
-      .insert({
-        fixture_id: fixtureId,
-        video_url: videoUrl,
-        title: title || null,
-      })
-      .select();
-    setIsSaving(false);
+    try {
+      const { data, error } = await createFixtureMedia(supabaseRef.current, {
+        fixtureId,
+        videoUrl,
+        title,
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
-    }
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
 
-    if (data) {
-      setMedia([...(data as FixtureMediaRow[]), ...media]);
+      if (data) {
+        setMedia([...(data as FixtureMediaRow[]), ...media]);
+      }
+      closeDialog();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    closeDialog();
   }
 
   async function handleDelete(id: string) {
@@ -101,14 +115,19 @@ export function FixtureMediaSection({
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("fixture_media").delete().eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await deleteFixtureMedia(supabaseRef.current, id);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+      setMedia(media.filter((m) => m.id !== id));
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    setMedia(media.filter((m) => m.id !== id));
   }
 
   function closeDialog() {
@@ -239,4 +258,8 @@ export function FixtureMediaSection({
       </Card>
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }

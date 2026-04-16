@@ -4,39 +4,10 @@ import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { INITIAL_FIXTURES, mapFixtureRecord, type Fixture } from "@/lib/team-site-data";
-import { createClient } from "@/lib/supabase/server";
-import { hasSupabaseEnv } from "@/lib/supabase/env";
-import type { Database } from "@/types/database";
-
-type FixtureRow = Database["public"]["Tables"]["fixtures"]["Row"];
-type GoalRow = Database["public"]["Tables"]["goals"]["Row"];
-type FixtureWithGoals = FixtureRow & { goals: GoalRow[] | null };
-
-async function getFixtures(): Promise<Fixture[]> {
-  if (!hasSupabaseEnv()) {
-    return INITIAL_FIXTURES;
-  }
-
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("fixtures")
-      .select("id, opponent, fixture_date, fixture_time, venue, status, mariners_score, opponent_score, created_at, updated_at, goals(id, fixture_id, player_name, minute, team, created_at)")
-      .order("fixture_date", { ascending: false });
-
-    if (error || !data || data.length === 0) {
-      return INITIAL_FIXTURES;
-    }
-
-    return (data as FixtureWithGoals[]).map((f) => mapFixtureRecord(f, f.goals ?? []));
-  } catch {
-    return INITIAL_FIXTURES;
-  }
-}
+import { getFixtures, getSiteSettings } from "@/lib/team-data-loaders";
 
 export default async function FixturesPage() {
-  const fixtures = await getFixtures();
+  const [fixtures, settings] = await Promise.all([getFixtures(), getSiteSettings()]);
   const upcomingFixtures = fixtures.filter((fixture) => fixture.status === "upcoming");
   const completedFixtures = fixtures.filter((fixture) => fixture.status === "completed");
   const nextFixture = upcomingFixtures[0];
@@ -192,7 +163,7 @@ export default async function FixturesPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

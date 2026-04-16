@@ -1,17 +1,12 @@
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent } from "@/components/ui/card";
+import { getSiteSettings, getStaff } from "@/lib/team-data-loaders";
 
-const STAFF = [
-  { id: 1, name: "Victor Helm", role: "Head Coach", bio: "A master tactician with 20 years of experience.", img: "staff-1" },
-  { id: 2, name: "Sarah Anchor", role: "Sporting Director", bio: "Leading the club's long-term vision and recruitment.", img: "staff-1" },
-  { id: 3, name: "Dr. Ben Rivers", role: "Head of Medical", bio: "Ensuring our athletes are in peak physical condition.", img: "staff-1" },
-  { id: 4, name: "Marco Tide", role: "Assistant Coach", bio: "Specializes in set-piece design and youth development.", img: "staff-1" },
-];
+export default async function StaffPage() {
+  const [staff, settings] = await Promise.all([getStaff(), getSiteSettings()]);
 
-export default function StaffPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -25,31 +20,29 @@ export default function StaffPage() {
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {STAFF.map((member) => {
-              const img = PlaceHolderImages.find(i => i.id === member.img);
-              return (
-                <Card key={member.id} className="bg-card border-primary/20 overflow-hidden">
-                  <div className="relative aspect-square">
-                    <Image
-                      src={img?.imageUrl || ""}
-                      alt={member.name}
-                      fill
-                      className="object-cover opacity-80"
-                      data-ai-hint="coach"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold">{member.name}</h3>
-                    <p className="text-accent text-sm font-semibold mb-3">{member.role}</p>
-                    <p className="text-muted-foreground text-sm">{member.bio}</p>
-                  </div>
-                </Card>
-              );
-            })}
+            {staff.map((member) => (
+              <Card key={member.id} className="bg-card border-primary/20 overflow-hidden">
+                <div className="relative aspect-square">
+                  <Image
+                    src={member.imageUrl || "https://picsum.photos/seed/staff-fallback/400/500"}
+                    alt={member.name}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover opacity-80"
+                    data-ai-hint="coach"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold">{member.name}</h3>
+                  <p className="text-accent text-sm font-semibold mb-3">{member.role}</p>
+                  <p className="text-muted-foreground text-sm">{member.bio}</p>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </main>
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

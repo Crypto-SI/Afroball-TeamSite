@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/table";
 import type { Player } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { createPlayer, deletePlayer, getMutationErrorMessage } from "../dashboard-mutations";
+import { DashboardSectionHeader } from "./dashboard-section-ui";
 
 type Props = {
   players: Player[];
@@ -34,6 +36,7 @@ type Props = {
   isSaving: boolean;
   setIsSaving: (v: boolean) => void;
   setStatusMessage: (m: string | null) => void;
+  setPlayers: (players: Player[]) => void;
   onRefresh: () => Promise<void>;
   supabaseRef: React.MutableRefObject<SupabaseClient | null>;
 };
@@ -45,6 +48,7 @@ export function PlayersSection({
   isSaving,
   setIsSaving,
   setStatusMessage,
+  setPlayers,
   onRefresh,
   supabaseRef,
 }: Props) {
@@ -62,46 +66,65 @@ export function PlayersSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      const player: Player = {
+        id: createDemoId("player"),
+        name: pName,
+        pos: pPos,
+        secondPos: pSecondPos,
+        height: pHeight,
+        imageUrl: pImageUrl || "https://picsum.photos/seed/player-demo/400/500",
+      };
+      setPlayers([...players, player]);
       setStatusMessage("Player added (demo mode).");
       closeDialog();
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("players").insert({
-      name: pName,
-      pos: pPos,
-      second_pos: pSecondPos || null,
-      height: pHeight || null,
-      image_url: pImageUrl || null,
-      is_active: true,
-    });
-    setIsSaving(false);
+    try {
+      const { error } = await createPlayer(supabaseRef.current, {
+        name: pName,
+        pos: pPos,
+        secondPos: pSecondPos,
+        height: pHeight,
+        imageUrl: pImageUrl,
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      closeDialog();
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    closeDialog();
-    await onRefresh();
   }
 
   async function handleDelete(id: string) {
     if (mode !== "live" || !supabaseRef.current) {
+      setPlayers(players.filter((player) => player.id !== id));
       setStatusMessage("Player removed (demo mode).");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("players").delete().eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await deletePlayer(supabaseRef.current, id);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    await onRefresh();
   }
 
   function closeDialog() {
@@ -115,14 +138,11 @@ export function PlayersSection({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-black uppercase sm:text-3xl">Roster</h2>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            {canCrud ? "Maintain the official player roster." : "View the official player roster."}
-          </p>
-        </div>
-        {canCrud && (
+      <DashboardSectionHeader
+        title="Roster"
+        description={canCrud ? "Maintain the official player roster." : "View the official player roster."}
+        action={
+          canCrud ? (
           <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
             <DialogTrigger asChild>
               <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
@@ -167,8 +187,9 @@ export function PlayersSection({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       <Card className="overflow-hidden">
         <CardContent className="p-0">
@@ -230,4 +251,8 @@ export function PlayersSection({
       </Card>
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }

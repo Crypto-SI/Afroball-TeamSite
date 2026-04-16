@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/dashboard-config";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { getMutationErrorMessage, updateSiteSettings } from "../dashboard-mutations";
 
 type SiteSettingsRow = Database["public"]["Tables"]["site_settings"]["Row"];
 
@@ -45,12 +46,10 @@ export function SiteSettingsSection({
   const [contactPhone, setContactPhone] = useState(settings?.contact_phone ?? "");
 
   async function handleSave() {
-    if (!settings || mode !== "live" || !supabaseRef.current) {
-      setStatusMessage("Settings saved (demo mode).");
+    if (!settings) {
+      setStatusMessage("No site settings found. Run the Supabase schema setup first.");
       return;
     }
-
-    setIsSaving(true);
 
     const contactUpdate = {
       stadium_name: stadiumName || null,
@@ -69,24 +68,34 @@ export function SiteSettingsSection({
 
     const updateData = isAdmin ? adminUpdate : contactUpdate;
 
-    const { data, error } = await supabaseRef.current
-      .from("site_settings")
-      .update(updateData)
-      .eq("id", settings.id)
-      .select()
-      .single();
-
-    setIsSaving(false);
-
-    if (error) {
-      setStatusMessage(error.message);
+    if (mode !== "live" || !supabaseRef.current) {
+      setSettings({ ...settings, ...updateData });
+      setStatusMessage("Settings saved (demo mode).");
       return;
     }
 
-    if (data) {
-      setSettings(data as SiteSettingsRow);
+    setIsSaving(true);
+    try {
+      const { data, error } = await updateSiteSettings(
+        supabaseRef.current,
+        settings.id,
+        updateData
+      );
+
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      if (data) {
+        setSettings(data as SiteSettingsRow);
+      }
+      setStatusMessage("Settings saved successfully.");
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    setStatusMessage("Settings saved successfully.");
   }
 
   if (!settings) {

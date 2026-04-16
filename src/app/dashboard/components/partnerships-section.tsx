@@ -26,6 +26,13 @@ import {
 } from "@/components/ui/table";
 import type { Database } from "@/types/database";
 import type { SupabaseClient, DashboardMode } from "../types";
+import {
+  createPartnership,
+  deletePartnership,
+  getMutationErrorMessage,
+  togglePartnership,
+} from "../dashboard-mutations";
+import { DashboardSectionHeader, EmptyTableRow } from "./dashboard-section-ui";
 
 type PartnershipRow = Database["public"]["Tables"]["partnerships"]["Row"];
 
@@ -71,57 +78,78 @@ export function PartnershipsSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      const now = new Date().toISOString();
+      setPartnerships([
+        ...partnerships,
+        {
+          id: createDemoId("partner"),
+          name,
+          description: description || null,
+          logo_url: logoUrl || null,
+          website_url: websiteUrl || null,
+          tier: tier as PartnershipRow["tier"],
+          is_active: true,
+          created_at: now,
+          updated_at: now,
+        },
+      ]);
       setStatusMessage("Partner added (demo mode).");
       closeDialog();
       return;
     }
 
     setIsSaving(true);
-    const { data, error } = await supabaseRef.current
-      .from("partnerships")
-      .insert({
+    try {
+      const { data, error } = await createPartnership(supabaseRef.current, {
         name,
-        description: description || null,
-        logo_url: logoUrl || null,
-        website_url: websiteUrl || null,
+        description,
+        logoUrl,
+        websiteUrl,
         tier: tier as PartnershipRow["tier"],
-        is_active: true,
-      })
-      .select();
-    setIsSaving(false);
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
-    }
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
 
-    if (data) {
-      setPartnerships([...partnerships, ...(data as PartnershipRow[])]);
+      if (data) {
+        setPartnerships([...partnerships, ...(data as PartnershipRow[])]);
+      }
+      closeDialog();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    closeDialog();
   }
 
   async function handleToggleActive(id: string, currentActive: boolean) {
     if (mode !== "live" || !supabaseRef.current) {
+      setPartnerships(
+        partnerships.map((p) => (p.id === id ? { ...p, is_active: !currentActive } : p))
+      );
       setStatusMessage("Partner toggled (demo mode).");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current
-      .from("partnerships")
-      .update({ is_active: !currentActive, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await togglePartnership(supabaseRef.current, id, currentActive);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      setPartnerships(
+        partnerships.map((p) => (p.id === id ? { ...p, is_active: !currentActive } : p))
+      );
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    setPartnerships(
-      partnerships.map((p) => (p.id === id ? { ...p, is_active: !currentActive } : p))
-    );
   }
 
   async function handleDelete(id: string) {
@@ -131,14 +159,19 @@ export function PartnershipsSection({
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("partnerships").delete().eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await deletePartnership(supabaseRef.current, id);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+      setPartnerships(partnerships.filter((p) => p.id !== id));
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    setPartnerships(partnerships.filter((p) => p.id !== id));
   }
 
   function closeDialog() {
@@ -152,14 +185,11 @@ export function PartnershipsSection({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-black uppercase sm:text-3xl">Partnerships</h2>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            {canCrud ? "Manage sponsors and partners." : "View our sponsors and partners."}
-          </p>
-        </div>
-        {canCrud && (
+      <DashboardSectionHeader
+        title="Partnerships"
+        description={canCrud ? "Manage sponsors and partners." : "View our sponsors and partners."}
+        action={
+          canCrud ? (
           <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
             <DialogTrigger asChild>
               <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
@@ -211,8 +241,9 @@ export function PartnershipsSection({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       <Card className="overflow-hidden">
         <CardContent className="p-0">
@@ -283,11 +314,9 @@ export function PartnershipsSection({
                   </TableRow>
                 ))}
                 {partnerships.length === 0 && (
-                  <TableRow>
-                    <TableCell className="py-12 text-center text-muted-foreground italic" colSpan={canCrud ? 5 : 4}>
-                      No partnerships found.
-                    </TableCell>
-                  </TableRow>
+                  <EmptyTableRow colSpan={canCrud ? 5 : 4}>
+                    No partnerships found.
+                  </EmptyTableRow>
                 )}
               </TableBody>
             </Table>
@@ -296,4 +325,8 @@ export function PartnershipsSection({
       </Card>
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }

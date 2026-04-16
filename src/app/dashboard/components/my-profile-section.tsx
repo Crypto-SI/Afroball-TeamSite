@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Player } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
+import { getMutationErrorMessage, updatePlayer } from "../dashboard-mutations";
 
 type Props = {
   userId: string | null;
@@ -18,6 +19,7 @@ type Props = {
   isSaving: boolean;
   setIsSaving: (v: boolean) => void;
   setStatusMessage: (m: string | null) => void;
+  setPlayers: (players: Player[]) => void;
   onRefresh: () => Promise<void>;
   supabaseRef: React.MutableRefObject<SupabaseClient | null>;
 };
@@ -29,6 +31,7 @@ export function MyProfileSection({
   isSaving,
   setIsSaving,
   setStatusMessage,
+  setPlayers,
   onRefresh,
   supabaseRef,
 }: Props) {
@@ -49,31 +52,46 @@ export function MyProfileSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      setPlayers(
+        players.map((player) =>
+          player.id === myPlayer.id
+            ? {
+                ...player,
+                name,
+                pos,
+                secondPos,
+                height,
+                imageUrl,
+              }
+            : player
+        )
+      );
       setStatusMessage("Profile saved (demo mode).");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current
-      .from("players")
-      .update({
+    try {
+      const { error } = await updatePlayer(supabaseRef.current, myPlayer.id, {
         name,
         pos,
-        second_pos: secondPos || null,
-        height: height || null,
-        image_url: imageUrl || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", myPlayer.id);
-    setIsSaving(false);
+        secondPos,
+        height,
+        imageUrl,
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      setStatusMessage("Profile updated successfully.");
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    setStatusMessage("Profile updated successfully.");
-    await onRefresh();
   }
 
   if (!myPlayer) {

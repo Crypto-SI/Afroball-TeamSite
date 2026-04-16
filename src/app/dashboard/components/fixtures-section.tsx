@@ -27,6 +27,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Fixture, Goal } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
+import {
+  createFixture,
+  deleteFixture,
+  getMutationErrorMessage,
+  submitMatchResult,
+} from "../dashboard-mutations";
 
 type Props = {
   fixtures: Fixture[];
@@ -35,6 +41,7 @@ type Props = {
   isSaving: boolean;
   setIsSaving: (v: boolean) => void;
   setStatusMessage: (m: string | null) => void;
+  setFixtures: (fixtures: Fixture[]) => void;
   onRefresh: () => Promise<void>;
   supabaseRef: React.MutableRefObject<SupabaseClient | null>;
 };
@@ -46,6 +53,7 @@ export function FixturesSection({
   isSaving,
   setIsSaving,
   setStatusMessage,
+  setFixtures,
   onRefresh,
   supabaseRef,
 }: Props) {
@@ -71,77 +79,115 @@ export function FixturesSection({
     }
 
     if (mode !== "live" || !supabaseRef.current) {
+      const fixture: Fixture = {
+        id: createDemoId("fixture"),
+        opponent: newOpponent,
+        date: newDate,
+        time: newTime,
+        venue: newVenue,
+        status: "upcoming",
+      };
+      setFixtures([fixture, ...fixtures]);
       setStatusMessage("Fixture added (demo mode).");
       closeAddDialog();
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("fixtures").insert({
-      opponent: newOpponent,
-      fixture_date: newDate,
-      fixture_time: newTime,
-      venue: newVenue,
-      status: "upcoming",
-    });
-    setIsSaving(false);
+    try {
+      const { error } = await createFixture(supabaseRef.current, {
+        opponent: newOpponent,
+        date: newDate,
+        time: newTime,
+        venue: newVenue,
+      });
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+
+      closeAddDialog();
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-
-    closeAddDialog();
-    await onRefresh();
   }
 
   async function handleDelete(id: string) {
     if (mode !== "live" || !supabaseRef.current) {
+      setFixtures(fixtures.filter((fixture) => fixture.id !== id));
       setStatusMessage("Fixture deleted (demo mode).");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await supabaseRef.current.from("fixtures").delete().eq("id", id);
-    setIsSaving(false);
+    try {
+      const { error } = await deleteFixture(supabaseRef.current, id);
 
-    if (error) {
-      setStatusMessage(error.message);
-      return;
+      if (error) {
+        setStatusMessage(error.message);
+        return;
+      }
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
-    await onRefresh();
   }
 
   async function handleSubmitResult() {
     if (!selectedFixture) return;
 
     if (mode !== "live" || !supabaseRef.current) {
+      setFixtures(
+        fixtures.map((fixture) =>
+          fixture.id === selectedFixture.id
+            ? {
+                ...fixture,
+                status: "completed",
+                result: {
+                  marinersScore: mScore,
+                  opponentScore: oScore,
+                  goals: matchGoals.map((goal) => ({
+                    ...goal,
+                    id: createDemoId("goal"),
+                  })),
+                },
+              }
+            : fixture
+        )
+      );
       setStatusMessage("Result submitted (demo mode).");
       setIsResultOpen(false);
       return;
     }
 
     setIsSaving(true);
-    const { error: rpcError } = await supabaseRef.current.rpc("submit_match_result", {
-      p_fixture_id: selectedFixture.id,
-      p_mariners_score: mScore,
-      p_opponent_score: oScore,
-      p_goals: matchGoals.map((goal) => ({
-        player_name: goal.player,
-        minute: Number(goal.minute),
-        team: goal.team,
-      })),
-    });
+    try {
+      const { error: rpcError } = await submitMatchResult(
+        supabaseRef.current,
+        selectedFixture.id,
+        mScore,
+        oScore,
+        matchGoals
+      );
 
-    if (rpcError) {
+      if (rpcError) {
+        setStatusMessage(rpcError.message);
+        return;
+      }
+
+      setIsResultOpen(false);
+      await onRefresh();
+    } catch (error) {
+      setStatusMessage(getMutationErrorMessage(error));
+    } finally {
       setIsSaving(false);
-      setStatusMessage(rpcError.message);
-      return;
     }
-
-    setIsSaving(false);
-    setIsResultOpen(false);
-    await onRefresh();
   }
 
   function closeAddDialog() {
@@ -460,4 +506,8 @@ export function FixturesSection({
       )}
     </div>
   );
+}
+
+function createDemoId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
