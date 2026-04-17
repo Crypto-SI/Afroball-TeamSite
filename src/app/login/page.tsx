@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { Lock, Mail, Phone, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,7 +17,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "no_supabase"
@@ -53,10 +53,25 @@ function LoginPageContent() {
     setIsSubmitting(true);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+
+    // Auto-detect email vs phone: contains '@' → email, otherwise try phone
+    const trimmed = identifier.trim();
+    const isEmail = trimmed.includes("@");
+    // Supabase expects E.164 format — normalize by stripping non-digit chars (keep leading +)
+    const normalizedPhone = "+" + trimmed.replace(/[^\d]/g, "");
+    const isPhone = /^\+\d{7,15}$/.test(normalizedPhone);
+
+    if (!isEmail && !isPhone) {
+      setError("Please enter a valid email address or phone number.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const signInOpts = isEmail
+      ? { email: trimmed, password }
+      : { phone: normalizedPhone, password };
+
+    const { error: signInError } = await supabase.auth.signInWithPassword(signInOpts);
 
     setIsSubmitting(false);
 
@@ -101,10 +116,10 @@ function LoginPageContent() {
                 <Card className="border-accent/20 bg-card/50">
                   <CardHeader className="pb-3">
                     <Mail className="h-5 w-5 text-accent" />
-                    <CardTitle className="text-base uppercase">Email Auth</CardTitle>
+                    <CardTitle className="text-base uppercase">Email & Phone</CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground">
-                    Start with email and password for club staff.
+                    Sign in with either your email address or phone number.
                   </CardContent>
                 </Card>
                 <Card className="border-accent/20 bg-card/50">
@@ -146,15 +161,23 @@ function LoginPageContent() {
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="editor@club.com"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                    />
+                    <Label htmlFor="identifier">Email or Phone</Label>
+                    <div className="relative">
+                      <Input
+                        id="identifier"
+                        type="text"
+                        autoComplete="username"
+                        placeholder="editor@club.com or +447700000000"
+                        value={identifier}
+                        onChange={(event) => setIdentifier(event.target.value)}
+                        className="pl-10"
+                      />
+                      {identifier.includes("@") ? (
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      ) : (
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>

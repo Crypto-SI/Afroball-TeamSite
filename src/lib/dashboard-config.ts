@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   User,
   UserCog,
+  UserPlus,
   Users,
   Video,
 } from "lucide-react";
@@ -36,6 +37,7 @@ export type SectionId =
   | "staff"
   | "partnerships"
   | "fixture-media"
+  | "submissions"
   | "settings"
   | "users"
   | "purchases"
@@ -94,6 +96,13 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     icon: Video,
     roles: ["admin", "club", "creator"],
     crudRoles: ["admin", "creator"],
+  },
+  {
+    id: "submissions",
+    label: "Player Submissions",
+    icon: UserPlus,
+    roles: ["admin", "club"],
+    crudRoles: ["admin", "club"],
   },
   {
     id: "settings",

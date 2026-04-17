@@ -40,6 +40,8 @@ export type Database = {
           stadium_name: string | null;
           contact_email: string | null;
           contact_phone: string | null;
+          registration_open: boolean;
+          registration_password: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -52,6 +54,8 @@ export type Database = {
           stadium_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
+          registration_open?: boolean;
+          registration_password?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -64,6 +68,8 @@ export type Database = {
           stadium_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
+          registration_open?: boolean;
+          registration_password?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,6 +159,7 @@ export type Database = {
           image_url: string | null;
           squad_number: number | null;
           is_active: boolean;
+          user_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -165,6 +172,7 @@ export type Database = {
           image_url?: string | null;
           squad_number?: number | null;
           is_active?: boolean;
+          user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -177,10 +185,19 @@ export type Database = {
           image_url?: string | null;
           squad_number?: number | null;
           is_active?: boolean;
+          user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "players_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "auth.users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       staff: {
         Row: {
@@ -340,6 +357,88 @@ export type Database = {
           },
         ];
       };
+      player_submissions: {
+        Row: {
+          id: string;
+          name: string;
+          email: string | null;
+          phone: string | null;
+          pos: string;
+          second_pos: string | null;
+          height: string | null;
+          image_url: string | null;
+          squad_number: number | null;
+          proposed_password: string | null;
+          status: "pending" | "approved" | "rejected";
+          submitted_at: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          reviewer_notes: string | null;
+          created_player_id: string | null;
+          created_user_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email?: string | null;
+          phone?: string | null;
+          pos: string;
+          second_pos?: string | null;
+          height?: string | null;
+          image_url?: string | null;
+          squad_number?: number | null;
+          proposed_password: string;
+          status?: "pending" | "approved" | "rejected";
+          submitted_at?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          reviewer_notes?: string | null;
+          created_player_id?: string | null;
+          created_user_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string | null;
+          phone?: string | null;
+          pos?: string;
+          second_pos?: string | null;
+          height?: string | null;
+          image_url?: string | null;
+          squad_number?: number | null;
+          proposed_password?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          submitted_at?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          reviewer_notes?: string | null;
+          created_player_id?: string | null;
+          created_user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_submissions_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "auth.users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_submissions_created_player_id_fkey";
+            columns: ["created_player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_submissions_created_user_id_fkey";
+            columns: ["created_user_id"];
+            isOneToOne: false;
+            referencedRelation: "auth.users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -354,6 +453,10 @@ export type Database = {
         Returns: boolean;
       };
       is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      is_admin_or_club: {
         Args: Record<string, never>;
         Returns: boolean;
       };

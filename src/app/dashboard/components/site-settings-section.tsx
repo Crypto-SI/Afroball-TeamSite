@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { Eye, EyeOff, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/dashboard-config";
 import type { SupabaseClient, DashboardMode } from "../types";
@@ -44,6 +45,9 @@ export function SiteSettingsSection({
   const [stadiumName, setStadiumName] = useState(settings?.stadium_name ?? "");
   const [contactEmail, setContactEmail] = useState(settings?.contact_email ?? "");
   const [contactPhone, setContactPhone] = useState(settings?.contact_phone ?? "");
+  const [registrationOpen, setRegistrationOpen] = useState(settings?.registration_open ?? false);
+  const [registrationPassword, setRegistrationPassword] = useState(settings?.registration_password ?? "");
+  const [showGatePassword, setShowGatePassword] = useState(false);
 
   async function handleSave() {
     if (!settings) {
@@ -55,6 +59,8 @@ export function SiteSettingsSection({
       stadium_name: stadiumName || null,
       contact_email: contactEmail || null,
       contact_phone: contactPhone || null,
+      registration_open: registrationOpen,
+      registration_password: registrationPassword || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -174,6 +180,61 @@ export function SiteSettingsSection({
           <div className="grid gap-2">
             <Label>Contact Phone</Label>
             <Input onChange={(e) => setContactPhone(e.target.value)} type="tel" value={contactPhone} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Player Registration — both admin and club */}
+      <Card className="border-accent/10 bg-card/50">
+        <CardHeader>
+          <CardTitle className="text-sm font-black uppercase tracking-widest text-accent">
+            Player Registration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <p className="text-xs text-muted-foreground">
+            When enabled, prospective players can visit the registration page to submit their details.
+            All submissions require approval before a player account is created.
+          </p>
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label className="text-base font-semibold">Registration Page Open</Label>
+              <p className="text-xs text-muted-foreground">
+                Allow new players to submit their details at /register
+              </p>
+            </div>
+            <Switch
+              checked={registrationOpen}
+              onCheckedChange={setRegistrationOpen}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>Gate Password</Label>
+            <p className="text-xs text-muted-foreground">
+              Players must enter this password to access the registration form. Share it in-person with prospective players. Leave empty to remove the password requirement.
+            </p>
+            <div className="relative">
+              <Input
+                type={showGatePassword ? "text" : "password"}
+                placeholder="Enter gate password..."
+                value={registrationPassword}
+                onChange={(e) => setRegistrationPassword(e.target.value)}
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowGatePassword(!showGatePassword)}
+              >
+                {showGatePassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

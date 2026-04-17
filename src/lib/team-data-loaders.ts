@@ -29,6 +29,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsRow = {
   stadium_name: "Mariner Dome",
   contact_email: "contact@tomanmariners.com",
   contact_phone: "+1 (555) MARINER",
+  registration_open: false,
+  registration_password: null,
   created_at: new Date(0).toISOString(),
   updated_at: new Date(0).toISOString(),
 };

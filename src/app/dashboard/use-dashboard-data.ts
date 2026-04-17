@@ -35,6 +35,8 @@ const DEMO_SITE_SETTINGS: SiteSettingsRow = {
   stadium_name: "Mariner Dome",
   contact_email: "hello@tomanmariners.example",
   contact_phone: "+44 20 0000 0000",
+  registration_open: false,
+  registration_password: null,
   created_at: new Date(0).toISOString(),
   updated_at: new Date(0).toISOString(),
 };

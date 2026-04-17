@@ -9,6 +9,7 @@ import { PartnershipsSection } from "./partnerships-section";
 import { PlayersSection } from "./players-section";
 import { SiteSettingsSection } from "./site-settings-section";
 import { StaffSection } from "./staff-section";
+import { SubmissionsSection } from "./submissions-section";
 import { UserManagementSection } from "./user-management-section";
 import { FanPurchasesSection } from "./fan-purchases-section";
 import type { useDashboardData } from "../use-dashboard-data";
@@ -128,6 +129,14 @@ export function DashboardSections({
           mode={mode}
           setIsSaving={setIsSaving}
           setMedia={setFixtureMedia}
+          setStatusMessage={setStatusMessage}
+          supabaseRef={supabaseRef}
+        />
+      );
+    case "submissions":
+      return (
+        <SubmissionsSection
+          mode={mode}
           setStatusMessage={setStatusMessage}
           supabaseRef={supabaseRef}
         />
