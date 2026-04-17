@@ -2,18 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,7 +17,7 @@ import {
 import type { Player } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
 import { createPlayer, deletePlayer, getMutationErrorMessage } from "../dashboard-mutations";
-import { DashboardSectionHeader } from "./dashboard-section-ui";
+import { CrudDialog, DashboardSectionHeader, DeleteIconButton } from "./dashboard-section-ui";
 
 type Props = {
   players: Player[];
@@ -143,17 +133,16 @@ export function PlayersSection({
         description={canCrud ? "Maintain the official player roster." : "View the official player roster."}
         action={
           canCrud ? (
-          <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Player
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Add New Player</DialogTitle>
-              </DialogHeader>
+            <CrudDialog
+              contentClassName="sm:max-w-[500px]"
+              isSaving={isSaving}
+              onOpenChange={setIsAddOpen}
+              onSubmit={handleAdd}
+              open={isAddOpen}
+              submitLabel="Save Player"
+              title="Add New Player"
+              triggerLabel="Add Player"
+            >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label>Name</Label>
@@ -180,13 +169,7 @@ export function PlayersSection({
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button className="w-full font-bold" disabled={isSaving} onClick={handleAdd}>
-                  {isSaving ? "Saving..." : "Save Player"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </CrudDialog>
           ) : null
         }
       />
@@ -232,14 +215,7 @@ export function PlayersSection({
                     </TableCell>
                     {canCrud && (
                       <TableCell className="text-right">
-                        <Button
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleDelete(player.id)}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DeleteIconButton onClick={() => handleDelete(player.id)} />
                       </TableCell>
                     )}
                   </TableRow>

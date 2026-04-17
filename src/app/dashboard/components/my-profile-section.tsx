@@ -13,7 +13,6 @@ import type { SupabaseClient, DashboardMode } from "../types";
 import { getMutationErrorMessage, updatePlayer } from "../dashboard-mutations";
 
 type Props = {
-  userId: string | null;
   players: Player[];
   mode: DashboardMode;
   isSaving: boolean;
@@ -25,7 +24,6 @@ type Props = {
 };
 
 export function MyProfileSection({
-  userId,
   players,
   mode,
   isSaving,

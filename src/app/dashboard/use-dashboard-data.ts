@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
@@ -68,6 +68,62 @@ export function useDashboardData() {
       : "Supabase env vars are not set. The dashboard is running in local demo mode."
   );
 
+  const fetchAdditionalData = useCallback(async (
+    supabase: SupabaseClient,
+    role: UserRole | null,
+    id: string | null
+  ) => {
+    const commonData = await fetchCommonDashboardData(supabase);
+
+    setPartnerships(commonData.partnerships);
+    setFixtureMedia(commonData.fixtureMedia);
+    setSiteSettings(commonData.siteSettings);
+
+    if (role === "admin") {
+      const adminData = await fetchAdminDashboardData(supabase);
+      setProfiles(adminData.profiles);
+      setFanPurchases(adminData.fanPurchases);
+    }
+
+    if (role === "fan" && id) {
+      setFanPurchases(await fetchFanPurchases(supabase, id));
+    }
+  }, []);
+
+  const refreshFromSupabase = useCallback(async (
+    mounted = true,
+    roleOverride?: UserRole,
+    idOverride?: string | null
+  ) => {
+    const supabase = supabaseRef.current;
+    if (!supabase) return;
+
+    setIsLoading(true);
+
+    const { data, error } = await fetchCoreDashboardData(supabase);
+
+    if (!mounted) return;
+
+    if (error || !data) {
+      setMode("schema-missing");
+      setStatusMessage("Supabase is configured, but the required tables or policies are not ready yet. Run the SQL in docs/supabase/02-schema-and-rls.md.");
+      setIsLoading(false);
+      return;
+    }
+
+    setFixtures(data.fixtures);
+    setPlayers(data.players);
+    setStaff(data.staff);
+
+    const effectiveRole = roleOverride ?? userRole;
+    const effectiveId = idOverride !== undefined ? idOverride : userId;
+    fetchAdditionalData(supabase, effectiveRole, effectiveId);
+
+    setMode("live");
+    setStatusMessage("Connected to Supabase. Changes now persist.");
+    setIsLoading(false);
+  }, [fetchAdditionalData, userId, userRole]);
+
   useEffect(() => {
     if (!supabaseConfigured) {
       setUserRole("admin");
@@ -116,63 +172,7 @@ export function useDashboardData() {
     return () => {
       mounted = false;
     };
-  }, [router, supabaseConfigured]);
-
-  async function refreshFromSupabase(
-    mounted = true,
-    roleOverride?: UserRole,
-    idOverride?: string | null
-  ) {
-    const supabase = supabaseRef.current;
-    if (!supabase) return;
-
-    setIsLoading(true);
-
-    const { data, error } = await fetchCoreDashboardData(supabase);
-
-    if (!mounted) return;
-
-    if (error || !data) {
-      setMode("schema-missing");
-      setStatusMessage("Supabase is configured, but the required tables or policies are not ready yet. Run the SQL in docs/supabase/02-schema-and-rls.md.");
-      setIsLoading(false);
-      return;
-    }
-
-    setFixtures(data.fixtures);
-    setPlayers(data.players);
-    setStaff(data.staff);
-
-    const effectiveRole = roleOverride ?? userRole;
-    const effectiveId = idOverride !== undefined ? idOverride : userId;
-    fetchAdditionalData(supabase, effectiveRole, effectiveId);
-
-    setMode("live");
-    setStatusMessage("Connected to Supabase. Changes now persist.");
-    setIsLoading(false);
-  }
-
-  async function fetchAdditionalData(
-    supabase: SupabaseClient,
-    role: UserRole | null,
-    id: string | null
-  ) {
-    const commonData = await fetchCommonDashboardData(supabase);
-
-    setPartnerships(commonData.partnerships);
-    setFixtureMedia(commonData.fixtureMedia);
-    setSiteSettings(commonData.siteSettings);
-
-    if (role === "admin") {
-      const adminData = await fetchAdminDashboardData(supabase);
-      setProfiles(adminData.profiles);
-      setFanPurchases(adminData.fanPurchases);
-    }
-
-    if (role === "fan" && id) {
-      setFanPurchases(await fetchFanPurchases(supabase, id));
-    }
-  }
+  }, [refreshFromSupabase, router, supabaseConfigured]);
 
   async function signOut() {
     if (!supabaseRef.current) {

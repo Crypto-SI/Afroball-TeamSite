@@ -140,6 +140,6 @@ export function canEdit(role: UserRole, sectionId: SectionId): boolean {
 }
 
 /** Returns the first section a role should see (always "overview") */
-export function getDefaultSection(_role: UserRole): SectionId {
+export function getDefaultSection(): SectionId {
   return "overview";
 }

@@ -1,17 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Plus, Trash2, Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ExternalLink, Video } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +17,7 @@ import type { Fixture } from "@/lib/team-site-data";
 import type { Database } from "@/types/database";
 import type { SupabaseClient, DashboardMode } from "../types";
 import { createFixtureMedia, deleteFixtureMedia, getMutationErrorMessage } from "../dashboard-mutations";
+import { CrudDialog, DeleteIconButton } from "./dashboard-section-ui";
 
 type FixtureMediaRow = Database["public"]["Tables"]["fixture_media"]["Row"];
 
@@ -147,17 +139,15 @@ export function FixtureMediaSection({
           </p>
         </div>
         {canCrud && (
-          <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Media
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Fixture Media</DialogTitle>
-              </DialogHeader>
+          <CrudDialog
+            isSaving={isSaving}
+            onOpenChange={setIsAddOpen}
+            onSubmit={handleAdd}
+            open={isAddOpen}
+            submitLabel="Save Media"
+            title="Add Fixture Media"
+            triggerLabel="Add Media"
+          >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label>Fixture</Label>
@@ -187,13 +177,7 @@ export function FixtureMediaSection({
                   <Input onChange={(e) => setTitle(e.target.value)} placeholder="Match Highlights" value={title} />
                 </div>
               </div>
-              <DialogFooter>
-                <Button className="w-full font-bold" disabled={isSaving} onClick={handleAdd}>
-                  {isSaving ? "Saving..." : "Save Media"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          </CrudDialog>
         )}
       </div>
 
@@ -231,14 +215,7 @@ export function FixtureMediaSection({
                     </TableCell>
                     {canCrud && (
                       <TableCell className="text-right">
-                        <Button
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleDelete(item.id)}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DeleteIconButton onClick={() => handleDelete(item.id)} />
                       </TableCell>
                     )}
                   </TableRow>

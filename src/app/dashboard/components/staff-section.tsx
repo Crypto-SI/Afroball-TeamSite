@@ -2,17 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { StaffMember } from "@/lib/team-site-data";
 import type { SupabaseClient, DashboardMode } from "../types";
 import { createStaff, deleteStaff, getMutationErrorMessage } from "../dashboard-mutations";
-import { DashboardSectionHeader } from "./dashboard-section-ui";
+import { CrudDialog, DashboardSectionHeader, DeleteIconButton } from "./dashboard-section-ui";
 
 type Props = {
   staff: StaffMember[];
@@ -139,17 +129,15 @@ export function StaffSection({
         description={canCrud ? "Manage coaching and administrative roles." : "View coaching and administrative staff."}
         action={
           canCrud ? (
-          <Dialog onOpenChange={setIsAddOpen} open={isAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full bg-accent font-bold text-accent-foreground sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Staff Member
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Staff Member</DialogTitle>
-              </DialogHeader>
+            <CrudDialog
+              isSaving={isSaving}
+              onOpenChange={setIsAddOpen}
+              onSubmit={handleAdd}
+              open={isAddOpen}
+              submitLabel="Save Member"
+              title="Add Staff Member"
+              triggerLabel="Add Staff Member"
+            >
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label>Name</Label>
@@ -168,13 +156,7 @@ export function StaffSection({
                   <Textarea onChange={(e) => setSBio(e.target.value)} value={sBio} />
                 </div>
               </div>
-              <DialogFooter>
-                <Button className="w-full font-bold" disabled={isSaving} onClick={handleAdd}>
-                  {isSaving ? "Saving..." : "Save Member"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </CrudDialog>
           ) : null
         }
       />
@@ -211,14 +193,7 @@ export function StaffSection({
                     </TableCell>
                     {canCrud && (
                       <TableCell className="text-right">
-                        <Button
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleDelete(member.id)}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DeleteIconButton onClick={() => handleDelete(member.id)} />
                       </TableCell>
                     )}
                   </TableRow>

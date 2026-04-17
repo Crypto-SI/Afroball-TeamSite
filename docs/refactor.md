@@ -26,6 +26,7 @@ Progress:
 - Simplified `src/app/dashboard/page.tsx` so it mainly handles active section state, layout, sidebar rendering, and section prop wiring.
 - Added `src/app/dashboard/dashboard-queries.ts` for Supabase read helpers used by the dashboard data hook.
 - Added `src/app/dashboard/dashboard-mutations.ts` for Supabase write helpers used by dashboard sections.
+- Split dashboard mutations into resource-specific modules under `src/app/dashboard/dashboard-mutations/`, with `dashboard-mutations.ts` kept as a barrel export for existing callers.
 
 ## 3. Normalize Demo Mode Behavior
 
@@ -71,10 +72,16 @@ Progress:
 
 - Added `src/app/dashboard/components/dashboard-section-ui.tsx` with shared section header and empty table row helpers.
 - Applied the shared header/empty-state helpers to selected dashboard sections as the first pass.
+- Added shared `CrudDialog` and `DeleteIconButton` helpers and applied them across the standard fixtures, players, staff, partnerships, and fixture media dashboard sections.
+- Extracted user management dialog/table rendering into `src/app/dashboard/components/user-management-ui.tsx`.
+- Extracted fixture result entry dialog rendering into `src/app/dashboard/components/match-result-dialog.tsx`.
+- Split fixture section rendering into `src/app/dashboard/components/fixture-management-ui.tsx`.
+- Split partnership dialog/table rendering into `src/app/dashboard/components/partnerships-ui.tsx`.
+- Split dashboard page chrome and section routing into `dashboard-shell.tsx` and `dashboard-sections.tsx`.
 
 Remaining:
 
-- Continue replacing repeated dialog, delete button, and table empty-state markup across the rest of the dashboard sections.
+- Continue replacing specialized dialog and table patterns in custom sections where doing so reduces complexity without hiding important workflow differences.
 
 ## 6. Clean AI Summary Boundary
 
@@ -104,24 +111,33 @@ Progress:
 
 - Added Zod validation to the dashboard mutation helper boundary for fixtures, match results, players, staff, partnerships, and fixture media.
 - Updated live mutation handlers in dashboard sections to reset saving state in `finally` and report validation errors consistently.
+- Added Zod validation to `/api/admin/create-user`.
+- Added shared create-user request validation in `src/lib/admin-create-user-schema.ts` and reused it before client-side form submission.
 
 Remaining:
 
-- Extend validation to user creation and other API routes, then remove remaining ad hoc request parsing.
+- Extend validation to any future API routes and keep replacing ad hoc request parsing as endpoints are added.
 
 ## 8. Restore Non-Interactive Linting
+
+Status: complete.
 
 - Add or migrate to an explicit ESLint configuration compatible with the current Next.js version.
 - Change `npm run lint` so it runs without prompting.
 - Add linting to the normal verification flow after it is configured.
+
+Progress:
+
+- Added `eslint.config.mjs` using the native Next.js flat ESLint config exports.
+- Updated `npm run lint` to run `eslint .` non-interactively.
+- Lint now exits successfully with no warnings.
 
 ## Verification
 
 After each refactor, run the smallest useful check first:
 
 ```bash
+npm run lint
 npm run typecheck
 npm run build
 ```
-
-Run lint once the ESLint script has been migrated away from the deprecated interactive `next lint` command.

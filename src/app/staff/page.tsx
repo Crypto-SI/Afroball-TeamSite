@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { getSiteSettings, getStaff } from "@/lib/team-data-loaders";
 
 export default async function StaffPage() {

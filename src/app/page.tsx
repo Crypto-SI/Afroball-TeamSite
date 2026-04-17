@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { SVGProps } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -235,7 +236,7 @@ export default function Home() {
   );
 }
 
-function ShieldCheck(props: any) {
+function ShieldCheck(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

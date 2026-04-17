@@ -29,7 +29,6 @@ type Props = {
   fixtureMedia: FixtureMediaRow[];
   fanPurchases: FanPurchaseRow[];
   profiles: ProfileRow[];
-  userId: string | null;
 };
 
 export function OverviewSection({
@@ -41,7 +40,6 @@ export function OverviewSection({
   fixtureMedia,
   fanPurchases,
   profiles,
-  userId,
 }: Props) {
   const upcomingFixtures = fixtures.filter((f) => f.status === "upcoming");
   const completedFixtures = fixtures.filter((f) => f.status === "completed");

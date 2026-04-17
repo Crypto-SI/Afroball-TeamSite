@@ -2,37 +2,20 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
-import { type UserRole } from "@/lib/dashboard-config";
-
-const VALID_ROLES: UserRole[] = ["admin", "club", "creator", "player", "fan"];
+import { CreateUserRequestSchema } from "@/lib/admin-create-user-schema";
 
 export async function POST(request: Request) {
   try {
     // ── 1. Parse input ──────────────────────────────────────────────────────
-    const body = await request.json();
-    const { email, password, full_name, role } = body as {
-      email?: string;
-      password?: string;
-      full_name?: string;
-      role?: string;
-    };
+    const parsed = CreateUserRequestSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return Response.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid request body." },
+        { status: 400 }
+      );
+    }
 
-    // Validate required fields
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return Response.json({ error: "A valid email is required." }, { status: 400 });
-    }
-    if (!password || typeof password !== "string" || password.length < 6) {
-      return Response.json(
-        { error: "Password is required and must be at least 6 characters." },
-        { status: 400 }
-      );
-    }
-    if (!role || !VALID_ROLES.includes(role as UserRole)) {
-      return Response.json(
-        { error: `Role must be one of: ${VALID_ROLES.join(", ")}` },
-        { status: 400 }
-      );
-    }
+    const { email, password, full_name, role } = parsed.data;
 
     // ── 2. Verify caller is an admin ────────────────────────────────────────
     const cookieStore = await cookies();
@@ -107,7 +90,7 @@ export async function POST(request: Request) {
       .upsert(
         {
           id: newUser.user.id,
-          role: role as Database["public"]["Tables"]["profiles"]["Update"]["role"],
+          role,
           full_name: full_name || null,
         },
         { onConflict: "id" }
