@@ -1,6 +1,6 @@
 "use client";
 
-import { Anchor, Facebook, Instagram, Twitter, Youtube, LogIn } from "lucide-react";
+import { Anchor, Facebook, Instagram, Twitter, Youtube, LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAuthState } from "@/hooks/use-auth-state";
@@ -55,12 +55,20 @@ export function FooterContent({ settings }: FooterContentProps) {
               <li><Link href="/partnership" className="hover:text-accent">Partners</Link></li>
               <li><Link href="/dashboard" className="hover:text-accent">Dashboard</Link></li>
               {!isLoggedIn && (
-                <li>
-                  <Link href="/login" className="inline-flex items-center gap-1.5 hover:text-accent">
-                    <LogIn className="h-3.5 w-3.5" />
-                    Login
-                  </Link>
-                </li>
+                <>
+                  <li>
+                    <Link href="/register" className="inline-flex items-center gap-1.5 hover:text-accent">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Register
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/login" className="inline-flex items-center gap-1.5 hover:text-accent">
+                      <LogIn className="h-3.5 w-3.5" />
+                      Login
+                    </Link>
+                  </li>
+                </>
               )}
             </ul>
           </div>
@@ -71,6 +79,17 @@ export function FooterContent({ settings }: FooterContentProps) {
               <li><Link href="/merch" className="hover:text-accent">Shop Merch</Link></li>
               <li><Link href="/contact" className="hover:text-accent">Support</Link></li>
               <li><Link href="#" className="hover:text-accent">Membership</Link></li>
+              {settings.registration_open && (
+                <li>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-1.5 text-accent font-semibold hover:text-accent/80"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Player Registration
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
           <div>

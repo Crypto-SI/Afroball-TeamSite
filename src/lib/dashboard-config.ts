@@ -3,7 +3,6 @@ import {
   Calendar,
   Heart,
   LayoutDashboard,
-  Settings,
   ShieldCheck,
   ShoppingCart,
   User,
@@ -38,7 +37,6 @@ export type SectionId =
   | "partnerships"
   | "fixture-media"
   | "submissions"
-  | "settings"
   | "users"
   | "purchases"
   | "my-profile";
@@ -103,13 +101,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     icon: UserPlus,
     roles: ["admin", "club"],
     crudRoles: ["admin", "club"],
-  },
-  {
-    id: "settings",
-    label: "Site Settings",
-    icon: Settings,
-    roles: ["admin", "club"],
-    crudRoles: ["admin", "club"], // club gets limited edit
   },
   {
     id: "users",

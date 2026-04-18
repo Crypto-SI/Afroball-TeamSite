@@ -10,12 +10,19 @@ import {
   AlertCircle,
   RefreshCw,
   Pencil,
+  Eye,
+  EyeOff,
+  FolderOpen,
+  Copy,
+  Save,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -36,11 +43,16 @@ import type { Database } from "@/types/database";
 import type { SupabaseClient, DashboardMode } from "../types";
 
 type Submission = Database["public"]["Tables"]["player_submissions"]["Row"];
+type SubmissionUpdate = Database["public"]["Tables"]["player_submissions"]["Update"];
 
 type Props = {
   mode: DashboardMode;
   supabaseRef: React.MutableRefObject<SupabaseClient | null>;
   setStatusMessage: (m: string | null) => void;
+  registrationOpen?: boolean;
+  onToggleRegistration?: (open: boolean) => void;
+  gatePassword?: string | null;
+  onUpdateGatePassword?: (password: string) => Promise<void>;
 };
 
 const POSITIONS = [
@@ -53,10 +65,50 @@ export function SubmissionsSection({
   mode,
   supabaseRef,
   setStatusMessage,
+  registrationOpen,
+  onToggleRegistration,
+  gatePassword,
+  onUpdateGatePassword,
 }: Props) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
+
+  // Settings tab state
+  const [settingsPassword, setSettingsPassword] = useState(gatePassword ?? "");
+  const [showSettingsPassword, setShowSettingsPassword] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // Sync settingsPassword with gatePassword prop
+  useEffect(() => {
+    setSettingsPassword(gatePassword ?? "");
+  }, [gatePassword]);
+
+  const registrationUrl = typeof window !== "undefined" ? `${window.location.origin}/register` : "/register";
+
+  const handleSaveSettings = async () => {
+    if (!onUpdateGatePassword) return;
+    setIsSavingSettings(true);
+    try {
+      await onUpdateGatePassword(settingsPassword);
+    } catch (err) {
+      console.error("Save settings error:", err);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(registrationUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      // Fallback
+      setStatusMessage("Failed to copy URL to clipboard.");
+    }
+  };
 
   // Edit dialog state
   const [editId, setEditId] = useState<string | null>(null);
@@ -65,7 +117,13 @@ export function SubmissionsSection({
   const [editSecondPos, setEditSecondPos] = useState("");
   const [editHeight, setEditHeight] = useState("");
   const [editSquadNumber, setEditSquadNumber] = useState("");
+  const [editPassword, setEditPassword] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // View dialog state
+  const [viewSubmission, setViewSubmission] = useState<Submission | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [showViewPassword, setShowViewPassword] = useState(false);
 
   // Reject dialog state
   const [rejectId, setRejectId] = useState<string | null>(null);
@@ -109,22 +167,36 @@ export function SubmissionsSection({
     setEditSecondPos(s.second_pos ?? "");
     setEditHeight(s.height ?? "");
     setEditSquadNumber(s.squad_number?.toString() ?? "");
+    setEditPassword(s.proposed_password ?? "");
     setEditDialogOpen(true);
+  };
+
+  const openView = (s: Submission) => {
+    setViewSubmission(s);
+    setShowViewPassword(false);
+    setViewDialogOpen(true);
   };
 
   const handleEditSave = async () => {
     const supabase = supabaseRef.current;
     if (!supabase || !editId) return;
 
+    const update: SubmissionUpdate = {
+      name: editName,
+      pos: editPos,
+      second_pos: editSecondPos || null,
+      height: editHeight || null,
+      squad_number: editSquadNumber ? parseInt(editSquadNumber, 10) : null,
+    };
+
+    // Only include password if it was changed and is valid
+    if (editPassword && editPassword.length >= 6) {
+      update.proposed_password = editPassword;
+    }
+
     const { error } = await supabase
       .from("player_submissions")
-      .update({
-        name: editName,
-        pos: editPos,
-        second_pos: editSecondPos || null,
-        height: editHeight || null,
-        squad_number: editSquadNumber ? parseInt(editSquadNumber, 10) : null,
-      })
+      .update(update)
       .eq("id", editId);
 
     if (error) {
@@ -238,6 +310,7 @@ export function SubmissionsSection({
     setEditSecondPos("");
     setEditHeight("");
     setEditSquadNumber("");
+    setEditPassword("");
   }, []);
 
   // ── Submission Card ─────────────────────────────────────────────────────
@@ -247,12 +320,14 @@ export function SubmissionsSection({
     onEdit,
     onApprove,
     onReject,
+    onView,
   }: {
     s: Submission;
     processingId: string | null;
     onEdit: (s: Submission) => void;
     onApprove: (id: string) => void;
     onReject: (id: string) => void;
+    onView: (s: Submission) => void;
   }) {
     return (
     <Card className="border-accent/10 bg-card/50">
@@ -314,42 +389,52 @@ export function SubmissionsSection({
               </p>
             )}
 
-            {/* Actions for pending */}
-            {s.status === "pending" && (
-              <div className="mt-3 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openEdit(s)}
-                  disabled={processingId === s.id}
-                >
-                  <Pencil className="mr-1 h-3 w-3" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => handleApprove(s.id)}
-                  disabled={processingId === s.id}
-                >
-                  {processingId === s.id ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : (
-                    <CheckCircle className="mr-1 h-3 w-3" />
-                  )}
-                  Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => onReject(s.id)}
-                  disabled={processingId === s.id}
-                >
-                  <XCircle className="mr-1 h-3 w-3" />
-                  Reject
-                </Button>
-              </div>
-            )}
+            {/* Actions */}
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onView(s)}
+              >
+                <FolderOpen className="mr-1 h-3 w-3" />
+                Open
+              </Button>
+              {s.status === "pending" && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEdit(s)}
+                    disabled={processingId === s.id}
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => handleApprove(s.id)}
+                    disabled={processingId === s.id}
+                  >
+                    {processingId === s.id ? (
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                    )}
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => onReject(s.id)}
+                    disabled={processingId === s.id}
+                  >
+                    <XCircle className="mr-1 h-3 w-3" />
+                    Reject
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
@@ -381,10 +466,27 @@ export function SubmissionsSection({
             Review and approve player registration requests
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchSubmissions} disabled={isLoading}>
-          <RefreshCw className={`mr-1 h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          {onToggleRegistration && registrationOpen !== undefined && (
+            <div className="flex items-center gap-2 rounded-lg border px-3 py-1.5">
+              <Label htmlFor="reg-toggle" className="text-xs font-medium cursor-pointer">
+                Registration
+              </Label>
+              <Switch
+                id="reg-toggle"
+                checked={registrationOpen}
+                onCheckedChange={onToggleRegistration}
+              />
+              <Badge variant={registrationOpen ? "default" : "secondary"} className="text-xs">
+                {registrationOpen ? "Open" : "Closed"}
+              </Badge>
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={fetchSubmissions} disabled={isLoading}>
+            <RefreshCw className={`mr-1 h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -406,6 +508,12 @@ export function SubmissionsSection({
             <XCircle className="h-3 w-3" />
             Rejected
           </TabsTrigger>
+          {registrationOpen && (
+            <TabsTrigger value="settings" className="gap-1">
+              <Settings className="h-3 w-3" />
+              Settings
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="pending" className="mt-4 space-y-3">
@@ -428,6 +536,7 @@ export function SubmissionsSection({
                 onEdit={openEdit}
                 onApprove={handleApprove}
                 onReject={(id) => { setRejectId(id); setRejectDialogOpen(true); }}
+                onView={openView}
               />
             ))
           )}
@@ -453,6 +562,7 @@ export function SubmissionsSection({
                 onEdit={openEdit}
                 onApprove={handleApprove}
                 onReject={(id) => { setRejectId(id); setRejectDialogOpen(true); }}
+                onView={openView}
               />
             ))
           )}
@@ -478,10 +588,88 @@ export function SubmissionsSection({
                 onEdit={openEdit}
                 onApprove={handleApprove}
                 onReject={(id) => { setRejectId(id); setRejectDialogOpen(true); }}
+                onView={openView}
               />
             ))
           )}
         </TabsContent>
+
+        {/* Settings Tab — only when registration is open */}
+        {registrationOpen && (
+          <TabsContent value="settings" className="mt-4 space-y-4">
+            <Card className="border-accent/10 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-accent">
+                  Registration Link
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-xs text-muted-foreground">
+                  Share this URL with prospective players so they can submit their details.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={registrationUrl}
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyUrl}
+                    className="shrink-0"
+                  >
+                    <Copy className="mr-1 h-3 w-3" />
+                    {copiedUrl ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-accent/10 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-accent">
+                  Gate Password
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-xs text-muted-foreground">
+                  Players must enter this password to access the registration form. Share it in-person with prospective players. Leave empty to remove the password requirement.
+                </p>
+                <div className="relative">
+                  <Input
+                    type={showSettingsPassword ? "text" : "password"}
+                    placeholder="Enter gate password..."
+                    value={settingsPassword}
+                    onChange={(e) => setSettingsPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowSettingsPassword(!showSettingsPassword)}
+                  >
+                    {showSettingsPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  className="bg-accent font-bold text-accent-foreground"
+                  disabled={isSavingSettings}
+                  onClick={handleSaveSettings}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingSettings ? "Saving..." : "Save Password"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Edit Dialog */}
@@ -536,6 +724,19 @@ export function SubmissionsSection({
                 onChange={(e) => setEditSquadNumber(e.target.value)}
               />
             </div>
+            <div className="grid gap-2">
+              <Label>Password {editPassword ? "" : "(not set)"}</Label>
+              <Input
+                type="password"
+                placeholder="Min 6 characters"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                minLength={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank or unchanged to keep the existing password.
+              </p>
+            </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancel
@@ -545,6 +746,152 @@ export function SubmissionsSection({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Submission Details</DialogTitle>
+          </DialogHeader>
+          {viewSubmission && (
+            <div className="grid gap-4">
+              {/* Image & Name */}
+              <div className="flex items-center gap-4">
+                {viewSubmission.image_url ? (
+                  <div className="relative h-20 w-20 shrink-0 rounded-full overflow-hidden border-2 border-accent/20">
+                    <Image
+                      src={viewSubmission.image_url}
+                      alt={viewSubmission.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-20 w-20 shrink-0 rounded-full bg-muted border-2 border-dashed border-muted-foreground/20 flex items-center justify-center text-muted-foreground text-xs">
+                    No img
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-lg font-bold">{viewSubmission.name}</h3>
+                  <Badge
+                    variant={
+                      viewSubmission.status === "pending"
+                        ? "secondary"
+                        : viewSubmission.status === "approved"
+                        ? "default"
+                        : "destructive"
+                    }
+                  >
+                    {viewSubmission.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="grid gap-1 text-sm">
+                <p><span className="font-medium">Email:</span> {viewSubmission.email || "—"}</p>
+                <p><span className="font-medium">Phone:</span> {viewSubmission.phone || "—"}</p>
+              </div>
+
+              {/* Playing Details */}
+              <div className="grid gap-1 text-sm">
+                <p><span className="font-medium">Position:</span> {viewSubmission.pos}{viewSubmission.second_pos ? ` / ${viewSubmission.second_pos}` : ""}</p>
+                <p><span className="font-medium">Height:</span> {viewSubmission.height || "—"}</p>
+                <p><span className="font-medium">Squad Number:</span> {viewSubmission.squad_number ?? "—"}</p>
+              </div>
+
+              {/* Password */}
+              <div className="grid gap-1 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Password:</span>
+                  <span className="font-mono text-xs">
+                    {viewSubmission.proposed_password
+                      ? (showViewPassword ? viewSubmission.proposed_password : "••••••••")
+                      : "(cleared — already processed)"}
+                  </span>
+                  {viewSubmission.proposed_password && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setShowViewPassword(!showViewPassword)}
+                    >
+                      {showViewPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="grid gap-1 text-sm text-muted-foreground">
+                <p>Submitted: {new Date(viewSubmission.submitted_at).toLocaleString()}</p>
+                {viewSubmission.reviewed_at && (
+                  <p>Reviewed: {new Date(viewSubmission.reviewed_at).toLocaleString()}</p>
+                )}
+              </div>
+
+              {/* Reviewer Notes */}
+              {viewSubmission.reviewer_notes && (
+                <div className="rounded-lg border p-3 text-sm">
+                  <p className="font-medium mb-1">Reviewer Notes</p>
+                  <p className="text-muted-foreground">{viewSubmission.reviewer_notes}</p>
+                </div>
+              )}
+
+              {/* Linked records (approved) */}
+              {(viewSubmission.created_player_id || viewSubmission.created_user_id) && (
+                <div className="grid gap-1 text-xs text-muted-foreground">
+                  {viewSubmission.created_player_id && (
+                    <p>Player ID: {viewSubmission.created_player_id}</p>
+                  )}
+                  {viewSubmission.created_user_id && (
+                    <p>User ID: {viewSubmission.created_user_id}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Quick actions from view */}
+              {viewSubmission.status === "pending" && (
+                <div className="flex gap-2 justify-end border-t pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      openEdit(viewSubmission);
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      handleApprove(viewSubmission.id);
+                    }}
+                    disabled={processingId === viewSubmission.id}
+                  >
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    Approve
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      setRejectId(viewSubmission.id);
+                      setRejectDialogOpen(true);
+                    }}
+                    disabled={processingId === viewSubmission.id}
+                  >
+                    <XCircle className="mr-1 h-3 w-3" />
+                    Reject
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

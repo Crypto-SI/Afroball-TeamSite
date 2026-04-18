@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, Mail, Phone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle, Lock, Mail, Phone, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,9 +19,19 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "no_supabase"
       ? "Supabase is not configured. The admin dashboard requires Supabase env vars to be set."
+      : searchParams.get("error") === "reset_failed"
+        ? "Password reset link is invalid or has expired. Please request a new one."
+        : null
+  );
+  const [success, setSuccess] = useState<string | null>(
+    searchParams.get("reset") === "success"
+      ? "Password updated successfully. Please sign in with your new password."
       : null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +60,7 @@ function LoginPageContent() {
     }
 
     setError(null);
+    setSuccess(null);
     setIsSubmitting(true);
 
     const supabase = createClient();
@@ -83,6 +94,40 @@ function LoginPageContent() {
     const raw = searchParams.get("redirectedFrom") ?? "/dashboard";
     const safeRedirect = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
     router.replace(safeRedirect);
+  }
+
+  async function handleResetSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabaseReady) {
+      setError("Supabase environment variables are not configured yet.");
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    const supabase = createClient();
+    const trimmed = resetEmail.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError("Please enter a valid email address.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/auth/update-password`,
+    });
+
+    setIsSubmitting(false);
+
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+
+    setResetSent(true);
   }
 
   return (
@@ -136,9 +181,13 @@ function LoginPageContent() {
 
             <Card className="border-accent/20 bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle className="text-2xl font-black uppercase">Sign In</CardTitle>
+                <CardTitle className="text-2xl font-black uppercase">
+                  {resetMode ? "Reset Password" : "Sign In"}
+                </CardTitle>
                 <CardDescription>
-                  Use the editor credentials created in your Supabase project.
+                  {resetMode
+                    ? "Enter your email and we'll send you a password reset link."
+                    : "Use the editor credentials created in your Supabase project."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -154,54 +203,139 @@ function LoginPageContent() {
 
                 {error && (
                   <Alert variant="destructive">
-                    <AlertTitle>Sign In Failed</AlertTitle>
+                    <AlertTitle>{resetMode ? "Reset Failed" : "Sign In Failed"}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                  <div className="grid gap-2">
-                    <Label htmlFor="identifier">Email or Phone</Label>
-                    <div className="relative">
-                      <Input
-                        id="identifier"
-                        type="text"
-                        autoComplete="username"
-                        placeholder="editor@club.com or +447700000000"
-                        value={identifier}
-                        onChange={(event) => setIdentifier(event.target.value)}
-                        className="pl-10"
-                      />
-                      {identifier.includes("@") ? (
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      ) : (
-                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </div>
-                  <Button className="w-full font-bold" disabled={isSubmitting} type="submit">
-                    {isSubmitting ? "Signing In..." : "Sign In"}
-                  </Button>
-                </form>
+                {success && (
+                  <Alert className="border-green-500/30 bg-green-500/10">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertTitle>Success</AlertTitle>
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                )}
 
-                <p className="text-sm text-muted-foreground">
-                  Need setup help? Start with{" "}
-                  <Link className="font-semibold text-accent hover:underline" href="/docs/supabase">
-                    the Supabase guide
-                  </Link>
-                  .
-                </p>
+                {resetMode ? (
+                  resetSent ? (
+                    <div className="space-y-4">
+                      <Alert className="border-green-500/30 bg-green-500/10">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertTitle>Check Your Email</AlertTitle>
+                        <AlertDescription>
+                          If an account exists for <strong>{resetEmail}</strong>, you'll
+                          receive a password reset link shortly. Click the link to set a new
+                          password.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        className="w-full font-bold"
+                        onClick={() => {
+                          setResetMode(false);
+                          setResetSent(false);
+                          setResetEmail("");
+                          setError(null);
+                        }}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Sign In
+                      </Button>
+                    </div>
+                  ) : (
+                    <form className="space-y-4" onSubmit={handleResetSubmit}>
+                      <div className="grid gap-2">
+                        <Label htmlFor="reset-email">Email Address</Label>
+                        <div className="relative">
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="editor@club.com"
+                            value={resetEmail}
+                            onChange={(event) => setResetEmail(event.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <Button className="w-full font-bold" disabled={isSubmitting} type="submit">
+                        {isSubmitting ? "Sending Reset Link..." : "Send Reset Link"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          setResetMode(false);
+                          setError(null);
+                        }}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Sign In
+                      </Button>
+                    </form>
+                  )
+                ) : (
+                  <>
+                    <form className="space-y-4" onSubmit={handleSubmit}>
+                      <div className="grid gap-2">
+                        <Label htmlFor="identifier">Email or Phone</Label>
+                        <div className="relative">
+                          <Input
+                            id="identifier"
+                            type="text"
+                            autoComplete="username"
+                            placeholder="editor@club.com or +447700000000"
+                            value={identifier}
+                            onChange={(event) => setIdentifier(event.target.value)}
+                            className="pl-10"
+                          />
+                          {identifier.includes("@") ? (
+                            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          ) : (
+                            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password">Password</Label>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-accent hover:underline"
+                            onClick={() => {
+                              setResetMode(true);
+                              setError(null);
+                              setSuccess(null);
+                            }}
+                          >
+                            Forgot Password?
+                          </button>
+                        </div>
+                        <Input
+                          id="password"
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                        />
+                      </div>
+                      <Button className="w-full font-bold" disabled={isSubmitting} type="submit">
+                        {isSubmitting ? "Signing In..." : "Sign In"}
+                      </Button>
+                    </form>
+
+                    <p className="text-sm text-muted-foreground">
+                      Need setup help? Start with{" "}
+                      <Link className="font-semibold text-accent hover:underline" href="/docs/supabase">
+                        the Supabase guide
+                      </Link>
+                      .
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

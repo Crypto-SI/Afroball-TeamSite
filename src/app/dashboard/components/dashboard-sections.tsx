@@ -7,7 +7,6 @@ import { MyProfileSection } from "./my-profile-section";
 import { OverviewSection } from "./overview-section";
 import { PartnershipsSection } from "./partnerships-section";
 import { PlayersSection } from "./players-section";
-import { SiteSettingsSection } from "./site-settings-section";
 import { StaffSection } from "./staff-section";
 import { SubmissionsSection } from "./submissions-section";
 import { UserManagementSection } from "./user-management-section";
@@ -139,19 +138,52 @@ export function DashboardSections({
           mode={mode}
           setStatusMessage={setStatusMessage}
           supabaseRef={supabaseRef}
-        />
-      );
-    case "settings":
-      return (
-        <SiteSettingsSection
-          isSaving={isSaving}
-          mode={mode}
-          role={userRole}
-          setIsSaving={setIsSaving}
-          setSettings={setSiteSettings}
-          setStatusMessage={setStatusMessage}
-          settings={siteSettings}
-          supabaseRef={supabaseRef}
+          registrationOpen={siteSettings?.registration_open ?? false}
+          gatePassword={siteSettings?.registration_password ?? null}
+          onToggleRegistration={async (open) => {
+            if (!supabaseRef.current) return;
+            try {
+              setIsSaving(true);
+              const { data: { session } } = await supabaseRef.current.auth.getSession();
+              if (!session) { setStatusMessage("Not authenticated."); return; }
+
+              const res = await fetch("/api/admin/update-registration-settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ registration_open: open }),
+              });
+              const result = await res.json();
+              if (!res.ok) { setStatusMessage(`Failed: ${result.error}`); return; }
+
+              if (siteSettings) {
+                setSiteSettings({ ...siteSettings, registration_open: open });
+              } else {
+                refreshFromSupabase();
+              }
+              setStatusMessage(open ? "Registration opened." : "Registration closed.");
+            } catch { setStatusMessage("Unexpected error."); } finally { setIsSaving(false); }
+          }}
+          onUpdateGatePassword={async (password) => {
+            if (!supabaseRef.current) return;
+            try {
+              setIsSaving(true);
+              const { data: { session } } = await supabaseRef.current.auth.getSession();
+              if (!session) { setStatusMessage("Not authenticated."); return; }
+
+              const res = await fetch("/api/admin/update-registration-settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ registration_password: password }),
+              });
+              const result = await res.json();
+              if (!res.ok) { setStatusMessage(`Failed: ${result.error}`); return; }
+
+              if (siteSettings) {
+                setSiteSettings({ ...siteSettings, registration_password: password || null });
+              }
+              setStatusMessage(password ? "Gate password updated." : "Gate password removed.");
+            } catch { setStatusMessage("Unexpected error."); } finally { setIsSaving(false); }
+          }}
         />
       );
     case "users":
