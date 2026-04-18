@@ -390,7 +390,7 @@ export function SubmissionsSection({
             )}
 
             {/* Actions */}
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -459,7 +459,7 @@ export function SubmissionsSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-black uppercase sm:text-3xl">Player Submissions</h2>
           <p className="text-xs text-muted-foreground sm:text-sm">

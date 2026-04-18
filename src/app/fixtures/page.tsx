@@ -114,7 +114,7 @@ export default async function FixturesPage() {
                 {completedFixtures.map((fixture) => (
                   <Card key={fixture.id} className="overflow-hidden border-accent/20 bg-card/80">
                     <CardHeader className="border-b border-accent/10 bg-accent/5">
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <CardTitle className="text-xl uppercase">Mariners vs {fixture.opponent}</CardTitle>
                           <p className="mt-1 text-sm text-muted-foreground">

@@ -99,21 +99,23 @@ export function DashboardShell({
           </Sidebar>
 
           <SidebarInset className="flex-1 bg-background">
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator className="mr-2 h-4" orientation="vertical" />
-              <h1 className="truncate text-sm font-bold uppercase tracking-tight sm:text-lg">
-                {sidebarItems.find((item) => item.id === activeSection)?.label ?? "Dashboard"}
-              </h1>
+            <header className="flex h-auto min-h-16 shrink-0 items-center gap-2 border-b px-4 py-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="-ml-1" />
+                <Separator className="mr-2 h-4" orientation="vertical" />
+                <h1 className="truncate text-sm font-bold uppercase tracking-tight sm:text-lg">
+                  {sidebarItems.find((item) => item.id === activeSection)?.label ?? "Dashboard"}
+                </h1>
+              </div>
               <div className="ml-auto flex items-center gap-2">
-                <Badge variant={mode === "live" ? "default" : "outline"}>
+                <Badge variant={mode === "live" ? "default" : "outline"} className="hidden sm:flex">
                   {mode === "live" ? "Supabase Live" : "Demo Mode"}
                 </Badge>
-                <Badge variant="secondary">{ROLE_LABELS[userRole]}</Badge>
+                <Badge variant="secondary" className="hidden sm:flex">{ROLE_LABELS[userRole]}</Badge>
                 {supabaseConfigured && (
                   <Button onClick={onSignOut} size="sm" variant="outline">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    <LogOut className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Sign Out</span>
                   </Button>
                 )}
               </div>

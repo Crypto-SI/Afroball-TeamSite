@@ -148,7 +148,7 @@ export function PlayersSection({
                   <Label>Name</Label>
                   <Input onChange={(e) => setPName(e.target.value)} value={pName} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Position</Label>
                     <Input onChange={(e) => setPPos(e.target.value)} value={pPos} />
@@ -158,7 +158,7 @@ export function PlayersSection({
                     <Input onChange={(e) => setPSecondPos(e.target.value)} value={pSecondPos} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Height</Label>
                     <Input onChange={(e) => setPHeight(e.target.value)} value={pHeight} />

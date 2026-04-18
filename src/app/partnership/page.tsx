@@ -31,7 +31,7 @@ export default function PartnershipPage() {
           {/* Current Partners */}
           <section className="mb-20 md:mb-24">
             <h2 className="text-center text-xs font-bold uppercase tracking-[0.2em] text-accent mb-10">OUR PRINCIPAL PARTNERS</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
               {sponsors.map((s) => {
                 const CardUI = (
                   <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-card border border-accent/10 rounded-xl hover:border-accent/30 transition-all text-center h-full group">

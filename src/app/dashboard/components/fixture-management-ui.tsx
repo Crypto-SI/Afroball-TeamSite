@@ -62,7 +62,7 @@ export function AddFixtureDialog({
           <Label>Opponent</Label>
           <Input onChange={(event) => onOpponentChange(event.target.value)} value={opponent} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label>Date</Label>
             <Input onChange={(event) => onDateChange(event.target.value)} type="date" value={date} />

@@ -79,7 +79,7 @@ export function PartnershipDialog({
           <Label>Description</Label>
           <Textarea onChange={(event) => onDescriptionChange(event.target.value)} value={description} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label>Logo URL</Label>
             <Input onChange={(event) => onLogoUrlChange(event.target.value)} placeholder="https://..." value={logoUrl} />
